@@ -1,0 +1,113 @@
+<% alias SignalGarden.HTML %>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="<%= HTML.escape(@site.headline) %>">
+  <title><%= HTML.escape(@site.handle) %> - <%= HTML.escape(@site.headline) %></title>
+  <link rel="stylesheet" href="static/app.css">
+  <script defer src="static/app-static.js"></script>
+</head>
+<body class="crt">
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="./" aria-label="Home"><span class="prompt">~/</span><%= HTML.escape(@site.handle) %></a>
+    <nav aria-label="Primary navigation">
+      <a class="nav-link active" href="./">about</a>
+      <a class="nav-link" href="signals/">signals</a>
+      <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
+    </nav>
+    <button class="ghost-button" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
+  </div>
+</header>
+<main>
+  <section class="shell hero">
+    <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span><%= HTML.escape(@site.availability) %></div>
+    <p class="terminal-line"><span class="prompt">$</span> whoami</p>
+    <div class="hero-identity">
+      <%= if @avatar_url != "" do %><img class="profile-avatar" src="<%= HTML.escape(@avatar_url) %>" alt="<%= HTML.escape(@site.display_name) %> GitHub avatar" width="96" height="96"><% end %>
+      <h1><%= HTML.escape(@site.display_name) %></h1>
+    </div>
+    <p class="headline"><%= HTML.escape(@site.headline) %></p>
+    <p class="lede"><%= HTML.escape(@site.about) %></p>
+    <div class="hero-actions">
+      <a class="primary-button" href="#projects">view selected work</a>
+      <a class="secondary-button" href="signals/">open signal radar</a>
+    </div>
+    <dl class="status-strip" aria-label="Site status">
+      <div><dt>location</dt><dd><%= HTML.escape(@site.location) %></dd></div>
+      <div><dt>sources</dt><dd><%= @enabled_feeds %> feeds</dd></div>
+      <div><dt>indexed</dt><dd><%= length(@items) %> items</dd></div>
+      <div><dt>hosting</dt><dd>github pages</dd></div>
+    </dl>
+  </section>
+
+  <section class="shell section" id="projects">
+    <div class="section-heading">
+      <div><p class="terminal-line"><span class="prompt">$</span> ls ./selected-work</p><h2>Selected work</h2></div>
+      <p>Projects chosen for product impact, architecture decisions, and operational clarity.</p>
+    </div>
+    <div class="project-grid featured-grid">
+      <%= for project <- @featured do %>
+      <article class="project-card featured-card">
+        <div class="card-topline"><span>featured</span><span>-&gt;</span></div>
+        <h3><a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener"><%= HTML.escape(project.name) %></a></h3>
+        <p><%= HTML.escape(project.summary) %></p>
+        <ul class="highlight-list">
+          <%= for highlight <- project.highlights do %><li><%= HTML.escape(highlight) %></li><% end %>
+        </ul>
+        <div class="chip-row"><%= for item <- project.stack do %><span class="chip"><%= HTML.escape(item) %></span><% end %></div>
+        <div class="card-links">
+          <a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener">source</a>
+          <%= if Map.get(project, :demo_url, "") != "" do %><a href="<%= HTML.escape(project.demo_url) %>" target="_blank" rel="noopener">live demo</a><% end %>
+        </div>
+      </article>
+      <% end %>
+    </div>
+    <%= if @others != [] do %>
+    <div class="project-grid compact-grid">
+      <%= for project <- @others do %>
+      <article class="project-card compact-card">
+        <h3><a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener"><%= HTML.escape(project.name) %></a></h3>
+        <p><%= HTML.escape(project.summary) %></p>
+        <div class="chip-row"><%= for item <- project.stack do %><span class="chip"><%= HTML.escape(item) %></span><% end %></div>
+      </article>
+      <% end %>
+    </div>
+    <% end %>
+  </section>
+
+  <section class="shell section split-section">
+    <div>
+      <p class="terminal-line"><span class="prompt">$</span> cat skills.txt</p>
+      <h2>Engineering focus</h2>
+    </div>
+    <div class="skill-groups">
+      <%= for group <- @site.skills do %>
+      <div class="skill-group">
+        <h3><%= HTML.escape(group.name) %></h3>
+        <p><%= HTML.escape(Enum.join(group.items, " / ")) %></p>
+      </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="shell section signal-callout">
+    <div>
+      <p class="terminal-line"><span class="prompt">$</span> mix sg.collect</p>
+      <h2>A public radar for technical change</h2>
+      <p>The signal page is rebuilt from RSS, Atom, and YouTube feeds by GitHub Actions. It stays cheap because the deployed site is static.</p>
+    </div>
+    <a class="primary-button" href="signals/">open signals</a>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <p><span class="prompt">$</span> static export from Elixir config and RSS data</p>
+    <p>&copy; <%= @year %> <%= HTML.escape(@site.handle) %></p>
+  </div>
+</footer>
+</body>
+</html>

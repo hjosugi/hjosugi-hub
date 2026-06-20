@@ -1,45 +1,20 @@
 SHELL := /bin/sh
-BINARY := bin/signal-garden
 
-.PHONY: run build test vet fmt-check check smoke demo-data refresh refresh-feeds export-static docker-up docker-down
-
-run:
-	go run ./cmd/server
-
-build:
-	mkdir -p bin
-	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o $(BINARY) ./cmd/server
+.PHONY: test fmt-check check collect export-static clean
 
 test:
-	go test ./...
-
-vet:
-	go vet ./...
+	mix test
 
 fmt-check:
-	@test -z "$$(gofmt -l ./cmd ./internal)" || (echo "Run gofmt on:"; gofmt -l ./cmd ./internal; exit 1)
+	mix format --check-formatted
 
-check: fmt-check vet test build
+check: test export-static
 
-smoke:
-	./scripts/smoke.sh
-
-demo-data:
-	cp data/items.sample.json data/items.json
-
-refresh:
-	@test -n "$$ADMIN_TOKEN" || (echo "Set ADMIN_TOKEN"; exit 1)
-	curl --fail --silent --show-error -X POST http://localhost:8080/api/refresh \
-		-H "Authorization: Bearer $$ADMIN_TOKEN"
-
-refresh-feeds:
-	go run ./cmd/refresh-feeds
+collect:
+	mix sg.collect
 
 export-static:
-	go run ./cmd/export-static -out public
+	mix sg.export --out public
 
-docker-up:
-	docker compose up --build
-
-docker-down:
-	docker compose down
+clean:
+	rm -rf _build public data/items.term data/collection-report.json

@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: erlef/setup-beam@v1
         with:
-          go-version: '1.26.x'
-          cache: true
-      - run: make check
-      - run: make smoke
+          otp-version: "27.x"
+          elixir-version: "1.18.x"
+      - run: mix test
+      - run: mix sg.export --out public

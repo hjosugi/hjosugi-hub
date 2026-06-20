@@ -1,48 +1,21 @@
-# Repository instructions for Claude Code
+# Repository instructions
 
-## Start here
+This project is an Elixir static-site pipeline for GitHub Pages.
 
-Read, in order:
-
-1. `HANDOFF.md`
-2. `LANGUAGE_DECISION.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/OPERATIONS.md`
-
-Then run:
+## Commands
 
 ```bash
-make check
-make smoke
+mix format --check-formatted
+mix test
+mix sg.collect
+mix sg.export --out public
 ```
 
-Do not begin feature work if the baseline is failing.
+## Rules
 
-## Engineering rules
-
-- Keep the public portfolio functional without JavaScript, network access, or Ollama.
-- Keep lexical search as a complete fallback.
-- Do not render feed HTML directly.
-- Preserve bounded concurrency and source-level failure isolation.
-- Keep secrets in environment variables, never config JSON or templates.
-- Prefer Go's standard library. Before adding a dependency, document why the standard library is insufficient.
-- Add tests for parsers, ranking, persistence, and authentication changes.
-- Do not silently change project claims in `config/site.json`; verify them against the linked repository.
-- Use small vertical commits. Update `HANDOFF.md` after finishing a phase.
-
-## Useful commands
-
-```bash
-make run
-make check
-make smoke
-make demo-data
-```
-
-## Current highest-priority work
-
-1. Conditional feed requests with ETag and Last-Modified persistence
-2. Source-health UI
-3. Canonical URL and content-hash deduplication
-4. SQLite repository adapter
-5. Bluesky selected-account ingestion
+- Do not reintroduce non-Elixir runtime code.
+- Keep the deployed site static and cheap to host.
+- Treat everything exported under `public/` as public.
+- Convert feed content to plain text before rendering or exporting it.
+- Keep `config/site.exs` and `config/feeds.exs` human-editable.
+- Avoid dependencies unless OTP/Elixir standard tooling is clearly insufficient.

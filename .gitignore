@@ -1,8 +1,12 @@
 .env
-bin/
+_build/
+deps/
+.elixir_ls/
 coverage.out
 public/
+data/items.term
+data/items.json
+data/collection-report.json
 *.log
-data/items.local.json
 data/*.tmp
 .DS_Store
