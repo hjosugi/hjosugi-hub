@@ -36,6 +36,8 @@ jobs:
         run: mix sg.collect --timeout 20000 --workers 6 --max-items 1000
       - id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Export static site
         run: mix sg.export --out public --base-url "${{ steps.pages.outputs.base_url }}"
       - uses: actions/upload-pages-artifact@v3
