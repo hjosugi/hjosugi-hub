@@ -7,6 +7,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Search collected technical reading items from <%= HTML.escape(@site.handle) %>">
   <title>radar - <%= HTML.escape(@site.handle) %></title>
+  <link rel="icon" href="../static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../static/app.css">
   <script defer src="../static/app-static.js"></script>
   <script defer src="../static/radar.js"></script>

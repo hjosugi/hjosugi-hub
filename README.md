@@ -1,6 +1,6 @@
 # Hjosugi Hub
 
-An Elixir-powered static portfolio and public technical-radar radar.
+An Elixir-powered static portfolio and public technical radar.
 
 The deployed site is plain static HTML/CSS/JS for GitHub Pages. Elixir Mix tasks
 collect RSS/Atom feeds, normalize and tag items, then export the portfolio and

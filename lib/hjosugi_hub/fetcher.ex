@@ -50,7 +50,7 @@ defmodule HjosugiHub.Fetcher do
 
   defp headers do
     [
-      {~c"user-agent", ~c"hjosugi-hub/0.2 (+https://github.com/hjosugi/hjosugi-hub)"},
+      {~c"user-agent", ~c"hjosugi-hub/0.3 (+https://github.com/hjosugi/hjosugi-hub)"},
       {~c"accept", ~c"application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.1"}
     ]
   end
