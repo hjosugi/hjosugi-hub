@@ -67,11 +67,11 @@
     %{
       name: "Backend and systems",
       items: [
-        "Elixir",
         "Java",
         "Python",
         "TypeScript",
         "REST APIs",
+        "Elixir",
         "concurrency",
         "system design"
       ]

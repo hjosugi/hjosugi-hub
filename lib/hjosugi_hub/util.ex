@@ -12,11 +12,16 @@ defmodule HjosugiHub.Util do
   def clean_text(value) do
     value
     |> to_string()
-    |> String.replace(~r/<[^>]*>/u, " ")
+    |> strip_tags()
     |> html_decode()
+    # Some feeds (e.g. Lobsters) entity-escape their HTML, so decoding reveals
+    # a second layer of tags that needs stripping too.
+    |> strip_tags()
     |> String.replace(~r/\s+/u, " ")
     |> String.trim()
   end
+
+  defp strip_tags(value), do: String.replace(value, ~r/<[^>]*>/u, " ")
 
   def summarize(value, max \\ 360) do
     value = String.trim(value || "")

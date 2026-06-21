@@ -11,6 +11,7 @@
   const sourceFacetsNode = app.querySelector("[data-source-facets]");
   const savedFacetsNode = app.querySelector("[data-saved-facets]");
   const totalCountNode = app.querySelector("[data-total-count]");
+  const suggestNode = document.getElementById("search-suggest");
   let items = [];
 
   const collator = new Intl.Collator(undefined, { sensitivity: "base" });
@@ -92,6 +93,7 @@
     .then((data) => {
       items = Array.isArray(data) ? data : [];
       if (totalCountNode) totalCountNode.textContent = String(items.length);
+      populateSuggestions();
       updateFromLocation();
     })
     .catch(() => {
@@ -158,6 +160,20 @@
       return;
     }
     resultsNode.replaceChildren(...visible.map(renderCard));
+  }
+
+  // Native autocomplete: suggest every source name and tag as you type.
+  function populateSuggestions() {
+    if (!suggestNode) return;
+    const terms = new Set();
+    for (const item of items) {
+      if (item.source_name) terms.add(item.source_name);
+      for (const tag of item.tags || []) terms.add(tag);
+    }
+    const options = [...terms]
+      .sort((a, b) => collator.compare(a, b))
+      .map((value) => el("option", { value }));
+    suggestNode.replaceChildren(...options);
   }
 
   function rank(values, query) {

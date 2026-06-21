@@ -44,7 +44,8 @@
     <label for="radar-search">Search title, summary, content, source, and tags</label>
     <div class="search-row">
       <span class="search-prompt">&gt;</span>
-      <input id="radar-search" name="q" placeholder="e.g. Spanner consistency, vector search, platform engineering" autocomplete="off">
+      <input id="radar-search" name="q" list="search-suggest" placeholder="e.g. Spanner consistency, vector search, platform engineering" autocomplete="off">
+      <datalist id="search-suggest"></datalist>
       <button class="primary-button" type="submit">search</button>
     </div>
   </form>

@@ -148,6 +148,72 @@
     tags: ["lobsters", "aggregator"]
   },
   %{
+    id: "cloudflare",
+    name: "The Cloudflare Blog",
+    url: "https://blog.cloudflare.com/rss/",
+    kind: "engineering",
+    enabled: true,
+    tags: ["cloudflare", "networking", "engineering"]
+  },
+  %{
+    id: "netflix-tech",
+    name: "Netflix Tech Blog",
+    url: "https://netflixtechblog.com/feed",
+    kind: "engineering",
+    enabled: true,
+    tags: ["netflix", "engineering", "distributed-systems"]
+  },
+  %{
+    id: "meta-engineering",
+    name: "Engineering at Meta",
+    url: "https://engineering.fb.com/feed/",
+    kind: "engineering",
+    enabled: true,
+    tags: ["meta", "engineering"]
+  },
+  %{
+    id: "julia-evans",
+    name: "Julia Evans",
+    url: "https://jvns.ca/atom.xml",
+    kind: "engineering",
+    enabled: true,
+    weight: 1.25,
+    tags: ["engineering", "systems"]
+  },
+  %{
+    id: "simon-willison",
+    name: "Simon Willison",
+    url: "https://simonwillison.net/atom/everything/",
+    kind: "engineering",
+    enabled: true,
+    weight: 1.25,
+    tags: ["engineering", "ai-ml", "developer-tools"]
+  },
+  %{
+    id: "lwn",
+    name: "LWN.net",
+    url: "https://lwn.net/headlines/rss",
+    kind: "engineering",
+    enabled: true,
+    tags: ["linux", "kernel", "engineering"]
+  },
+  %{
+    id: "go-blog",
+    name: "The Go Blog",
+    url: "https://go.dev/blog/feed.atom",
+    kind: "engineering",
+    enabled: true,
+    tags: ["golang", "engineering"]
+  },
+  %{
+    id: "rust-blog",
+    name: "Rust Blog",
+    url: "https://blog.rust-lang.org/feed.xml",
+    kind: "engineering",
+    enabled: true,
+    tags: ["rust", "engineering"]
+  },
+  %{
     id: "youtube-google-cloud",
     name: "Google Cloud Tech on YouTube",
     url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCJS9pqu9BzkAMNT5jguyJQ",

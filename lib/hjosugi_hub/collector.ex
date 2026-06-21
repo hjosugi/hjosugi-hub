@@ -11,6 +11,9 @@ defmodule HjosugiHub.Collector do
     started_at = DateTime.utc_now()
     enabled = Enum.filter(feeds, &Map.get(&1, :enabled, true))
 
+    # Feeds are network-bound, so fetch them in parallel: each runs in its own
+    # lightweight process, capped at `workers` at a time. A slow or hung feed is
+    # killed on timeout without taking the others down.
     results =
       enabled
       |> Task.async_stream(&Fetcher.fetch(&1, timeout_ms),

@@ -72,8 +72,8 @@ defmodule HjosugiHub.Store do
       title: Map.get(item, :title),
       url: Map.get(item, :url),
       author: Map.get(item, :author),
-      summary: Map.get(item, :summary),
-      content: Map.get(item, :content),
+      summary: resanitize(Map.get(item, :summary)),
+      content: resanitize(Map.get(item, :content)),
       published_at: Map.get(item, :published_at),
       collected_at: Map.get(item, :collected_at),
       score: Map.get(item, :score),
@@ -84,6 +84,12 @@ defmodule HjosugiHub.Store do
   defp merge_item(current, incoming) do
     %{incoming | collected_at: current.collected_at || incoming.collected_at}
   end
+
+  # Re-clean cached text so items stored before a clean_text fix (e.g. raw
+  # entity-escaped HTML from Lobsters) become plain text on the next read.
+  defp resanitize(nil), do: nil
+  defp resanitize(value) when is_binary(value), do: Util.clean_text(value)
+  defp resanitize(value), do: value
 
   defp empty_to_nil(""), do: nil
   defp empty_to_nil(value), do: value
