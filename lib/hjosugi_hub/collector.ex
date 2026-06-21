@@ -37,7 +37,8 @@ defmodule HjosugiHub.Collector do
       sources: Enum.map(results, &source_status/1),
       fresh_items: length(fresh_items),
       total_items: length(items),
-      failed_sources: Enum.count(results, fn {_feed, result} -> match?({:error, _reason, _status}, result) end)
+      failed_sources:
+        Enum.count(results, fn {_feed, result} -> match?({:error, _reason, _status}, result) end)
     }
 
     %{items: items, report: report}

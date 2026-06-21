@@ -35,8 +35,13 @@ defmodule HjosugiHub.FeedParser do
     if raw_id == "" do
       nil
     else
-      published_at = first([element_text(xml, "pubDate"), element_text(xml, "date")]) |> Util.parse_date() || now
-      author = first([element_text(xml, "creator"), element_text(xml, "author")]) |> Util.clean_text()
+      published_at =
+        first([element_text(xml, "pubDate"), element_text(xml, "date")]) |> Util.parse_date() ||
+          now
+
+      author =
+        first([element_text(xml, "creator"), element_text(xml, "author")]) |> Util.clean_text()
+
       categories = xml |> elements_text("category") |> Enum.map(&Util.clean_text/1)
       tags = Tagger.apply(title, content, [Map.get(feed, :tags, []), categories])
 
@@ -67,9 +72,15 @@ defmodule HjosugiHub.FeedParser do
     if raw_id == "" do
       nil
     else
-      published_at = first([element_text(xml, "published"), element_text(xml, "updated")]) |> Util.parse_date() || now
+      published_at =
+        first([element_text(xml, "published"), element_text(xml, "updated")]) |> Util.parse_date() ||
+          now
+
       author = xml |> element_text("author") |> element_text("name") |> Util.clean_text()
-      categories = xml |> element_tags("category") |> Enum.map(&attr(&1, "term")) |> Enum.reject(&(&1 == ""))
+
+      categories =
+        xml |> element_tags("category") |> Enum.map(&attr(&1, "term")) |> Enum.reject(&(&1 == ""))
+
       tags = Tagger.apply(title, content, [Map.get(feed, :tags, []), categories])
 
       %Item{

@@ -34,7 +34,14 @@ defmodule Mix.Tasks.Hub.Collect do
 
     feeds = Config.feeds(feeds_path)
     existing = Store.read_items(data_path)
-    result = Collector.collect(feeds, existing: existing, timeout_ms: timeout_ms, workers: workers, max_items: max_items)
+
+    result =
+      Collector.collect(feeds,
+        existing: existing,
+        timeout_ms: timeout_ms,
+        workers: workers,
+        max_items: max_items
+      )
 
     Store.write_items(data_path, result.items)
     Store.write_json(json_path, Store.public_items(result.items))

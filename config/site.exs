@@ -65,7 +65,15 @@
   skills: [
     %{
       name: "Backend and systems",
-      items: ["Elixir", "Java", "Python", "TypeScript", "REST APIs", "concurrency", "system design"]
+      items: [
+        "Elixir",
+        "Java",
+        "Python",
+        "TypeScript",
+        "REST APIs",
+        "concurrency",
+        "system design"
+      ]
     },
     %{
       name: "Data and search",
@@ -76,5 +84,11 @@
       items: ["containers", "CI/CD", "observability", "AWS", "Azure", "Google Cloud"]
     }
   ],
-  interests: ["distributed systems", "developer tools", "search", "data platforms", "local-first AI"]
+  interests: [
+    "distributed systems",
+    "developer tools",
+    "search",
+    "data platforms",
+    "local-first AI"
+  ]
 }

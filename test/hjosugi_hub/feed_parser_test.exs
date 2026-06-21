@@ -4,7 +4,13 @@ defmodule HjosugiHub.FeedParserTest do
   alias HjosugiHub.FeedParser
 
   test "parses RSS items into normalized items" do
-    feed = %{id: "sample", name: "Sample Feed", url: "https://example.com/feed.xml", kind: "rss", tags: ["sample"]}
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss",
+      tags: ["sample"]
+    }
 
     xml = """
     <rss version="2.0">

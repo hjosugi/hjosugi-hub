@@ -4,7 +4,8 @@ defmodule HjosugiHub.StoreTest do
   alias HjosugiHub.{Item, Store}
 
   test "normalizes cached items from the previous app name" do
-    path = Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
+    path =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
 
     previous_struct = String.to_atom("Elixir.Legacy.Item")
 

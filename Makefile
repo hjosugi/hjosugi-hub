@@ -8,7 +8,7 @@ test:
 fmt-check:
 	mix format --check-formatted
 
-check: test export-static
+check: fmt-check test export-static
 
 collect:
 	mix hub.collect
