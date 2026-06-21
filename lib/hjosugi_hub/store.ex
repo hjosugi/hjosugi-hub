@@ -48,6 +48,7 @@ defmodule HjosugiHub.Store do
         content: empty_to_nil(item.content),
         published_at: item.published_at,
         collected_at: item.collected_at,
+        score: item.score,
         tags: item.tags
       }
     end)
@@ -75,6 +76,7 @@ defmodule HjosugiHub.Store do
       content: Map.get(item, :content),
       published_at: Map.get(item, :published_at),
       collected_at: Map.get(item, :collected_at),
+      score: Map.get(item, :score),
       tags: Map.get(item, :tags, [])
     }
   end

@@ -7,7 +7,13 @@ defmodule HjosugiHub.Renderer do
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
 
   def export(site, feeds, items, out_dir, base_url \\ "") do
-    public_items = Store.public_items(items)
+    weights = Map.new(feeds, fn feed -> {feed.id, Config.feed_weight(feed)} end)
+
+    public_items =
+      items
+      |> Store.public_items()
+      |> Enum.map(fn item -> Map.put(item, :weight, Map.get(weights, item.source_id, 1.0)) end)
+
     now = DateTime.utc_now()
 
     assigns = %{

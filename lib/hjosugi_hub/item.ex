@@ -13,6 +13,7 @@ defmodule HjosugiHub.Item do
     :content,
     :published_at,
     :collected_at,
+    :score,
     tags: []
   ]
 end

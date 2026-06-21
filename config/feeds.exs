@@ -1,3 +1,7 @@
+# Each feed: id, name, url, kind, enabled, tags.
+# Optional :weight (float) biases radar ranking; without it a feed inherits a
+# default for its :kind (aggregator 1.3, newsletter 1.2, engineering 1.15,
+# official/youtube 1.0). Raise a source you trust, e.g. weight: 1.4.
 [
   %{
     id: "google-cloud",

@@ -15,6 +15,9 @@
 
   const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
+  // The landing view shows only the last N days; search opens the full archive.
+  const RECENT_DAYS = 30;
+
   // --- DOM helpers -------------------------------------------------------
 
   // el("a", {class, href, text, "aria-pressed"}, child|[children]) -> element.
@@ -124,13 +127,20 @@
     const tag = params.get("tag") || "";
     const source = params.get("source") || "";
     const onlySaved = params.get("saved") === "1";
+    // The unfiltered landing view shows only recent items; searching or filtering
+    // opens up the whole archive.
+    const defaultView = !query && !tag && !source && !onlySaved;
+    const cutoff = Date.now() - RECENT_DAYS * 86400000;
     const ranked = rank(items, query)
       .filter((item) => !onlySaved || isSaved(item))
       .filter((item) => !tag || item.tags?.some((value) => same(value, tag)))
-      .filter((item) => !source || same(item.source_name, source) || same(item.source_id, source));
+      .filter((item) => !source || same(item.source_name, source) || same(item.source_id, source))
+      .filter((item) => !defaultView || dateValue(item) >= cutoff);
     const visible = ranked.slice(0, 80);
 
-    summaryNode.textContent = summaryText(visible.length, ranked.length, query, tag, source, onlySaved);
+    summaryNode.textContent = defaultView
+      ? "top " + visible.length + " from the last " + RECENT_DAYS + " days · " + items.length + " indexed — search to see all"
+      : summaryText(visible.length, ranked.length, query, tag, source, onlySaved);
     clearNode.hidden = !(query || tag || source || onlySaved);
     clearNode.onclick = onNavigate(new URLSearchParams());
 
@@ -139,8 +149,9 @@
     renderFacets(sourceFacetsNode, facets(items, "source_name"), "source", source, params);
 
     if (visible.length === 0) {
-      const message =
-        onlySaved && saved.size === 0
+      const message = defaultView
+        ? "No items in the last " + RECENT_DAYS + " days — try a search."
+        : onlySaved && saved.size === 0
           ? "Nothing saved yet. Tap the star on any item to keep it here."
           : "Try a broader query or clear the active filters.";
       resultsNode.replaceChildren(emptyState("!", message));
@@ -161,10 +172,19 @@
   const TERM_WEIGHTS = { title: 7, tags: 5, source: 3, body: 1 };
   const PHRASE_WEIGHTS = { title: 6, tags: 4, source: 3, body: 2 };
 
+  // Default ordering when nothing is searched: recency biased by source weight,
+  // plus a popularity nudge from crowd-vote scores (e.g. Hacker News points).
+  function baseScore(item) {
+    const recency = Math.max(0, dateValue(item) / 1e13);
+    const weight = Number(item.weight) || 1;
+    const popularity = item.score > 0 ? Math.min(1.5, Math.log10(item.score + 1) / 2) : 0;
+    return recency * weight + popularity;
+  }
+
   function score(item, terms, query) {
-    const dateScore = Math.max(0, dateValue(item) / 1e13);
+    const base = baseScore(item);
     const phrase = norm(query);
-    if (terms.length === 0 && !phrase) return dateScore;
+    if (terms.length === 0 && !phrase) return base;
 
     const fields = {
       title: norm(item.title),
@@ -185,7 +205,7 @@
         if (fields[field].includes(phrase)) value += weight;
       }
     }
-    return value + dateScore;
+    return value + base;
   }
 
   // --- facets ------------------------------------------------------------
@@ -235,6 +255,7 @@
       el("span", { text: item.source_name || "unknown source" }),
       el("span", { text: dateLabel(item) }),
       item.source_kind ? el("span", { text: item.source_kind }) : null,
+      item.score > 0 ? el("span", { class: "radar-score", text: "▲ " + item.score }) : null,
       saveButton(item),
     ]);
 

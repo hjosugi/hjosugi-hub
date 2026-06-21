@@ -30,6 +30,23 @@ defmodule HjosugiHub.Config do
     Enum.count(feeds, &Map.get(&1, :enabled, true))
   end
 
+  # Ranking bias per source. A feed may set its own :weight; otherwise it falls
+  # back to a default for its :kind (crowd-voted aggregators rank highest).
+  @kind_weights %{
+    "aggregator" => 1.3,
+    "newsletter" => 1.2,
+    "engineering" => 1.15,
+    "official" => 1.0,
+    "youtube" => 1.0
+  }
+
+  def feed_weight(feed) do
+    case Map.get(feed, :weight) do
+      weight when is_number(weight) -> weight / 1
+      _ -> Map.get(@kind_weights, Map.get(feed, :kind), 1.0)
+    end
+  end
+
   defp load!(path) do
     {value, _binding} = Code.eval_file(path)
     value

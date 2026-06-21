@@ -29,6 +29,7 @@ defmodule HjosugiHub.FeedParser do
     title = xml |> element_text("title") |> Util.clean_text()
     raw_content = first([element_text(xml, "encoded"), element_text(xml, "description")])
     content = Util.clean_text(raw_content)
+    score = extract_score(raw_content)
     link = resolve_url(feed.url, element_text(xml, "link"))
     raw_id = first([element_text(xml, "guid"), link, title])
 
@@ -57,6 +58,7 @@ defmodule HjosugiHub.FeedParser do
         content: Util.truncate(content, 1500),
         published_at: published_at,
         collected_at: now,
+        score: score,
         tags: tags
       }
     end
@@ -66,6 +68,7 @@ defmodule HjosugiHub.FeedParser do
     title = xml |> element_text("title") |> Util.clean_text()
     raw_content = first([element_text(xml, "content"), element_text(xml, "summary")])
     content = Util.clean_text(raw_content)
+    score = extract_score(raw_content)
     link = atom_link(xml, feed.url)
     raw_id = first([element_text(xml, "id"), link, title])
 
@@ -95,8 +98,17 @@ defmodule HjosugiHub.FeedParser do
         content: Util.truncate(content, 1500),
         published_at: published_at,
         collected_at: now,
+        score: score,
         tags: tags
       }
+    end
+  end
+
+  # Crowd-vote count where a feed exposes it (e.g. Hacker News "Points: 123").
+  defp extract_score(raw) do
+    case Regex.run(~r/Points:\s*(\d+)/i, to_string(raw)) do
+      [_, digits] -> String.to_integer(digits)
+      _ -> nil
     end
   end
 
