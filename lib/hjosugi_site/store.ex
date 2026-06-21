@@ -5,7 +5,7 @@ defmodule HjosugiSite.Store do
 
   def read_items(path) do
     if File.exists?(path) do
-      path |> File.read!() |> :erlang.binary_to_term()
+      path |> File.read!() |> :erlang.binary_to_term() |> normalize_items()
     else
       []
     end
@@ -55,6 +55,28 @@ defmodule HjosugiSite.Store do
 
   def sort_items(items) do
     Enum.sort_by(items, &DateTime.to_unix(Util.item_time(&1)), :desc)
+  end
+
+  defp normalize_items(items) when is_list(items), do: Enum.map(items, &normalize_item/1)
+  defp normalize_items(_items), do: []
+
+  defp normalize_item(%Item{} = item), do: item
+
+  defp normalize_item(%{} = item) do
+    %Item{
+      id: Map.get(item, :id),
+      source_id: Map.get(item, :source_id),
+      source_name: Map.get(item, :source_name),
+      source_kind: Map.get(item, :source_kind),
+      title: Map.get(item, :title),
+      url: Map.get(item, :url),
+      author: Map.get(item, :author),
+      summary: Map.get(item, :summary),
+      content: Map.get(item, :content),
+      published_at: Map.get(item, :published_at),
+      collected_at: Map.get(item, :collected_at),
+      tags: Map.get(item, :tags, [])
+    }
   end
 
   defp merge_item(current, incoming) do
