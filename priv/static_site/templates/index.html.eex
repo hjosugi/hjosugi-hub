@@ -51,15 +51,17 @@
       <div><p class="terminal-line"><span class="prompt">$</span> ls ~/hobby</p><h2>Things I tinker with</h2></div>
       <p>Small things I build on weekends. Half experiment, half unfinished, occasionally useful.</p>
     </div>
-    <div class="project-grid featured-grid">
-      <%= for project <- @featured do %>
+    <div class="project-grid">
+      <%= for project <- @featured ++ @others do %>
       <article class="project-card featured-card">
         <div class="card-topline"><span>for fun</span><span>-&gt;</span></div>
         <h3><a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener"><%= HTML.escape(project.name) %></a></h3>
         <p><%= HTML.escape(project.summary) %></p>
+        <%= if project.highlights != [] do %>
         <ul class="highlight-list">
           <%= for highlight <- project.highlights do %><li><%= HTML.escape(highlight) %></li><% end %>
         </ul>
+        <% end %>
         <div class="chip-row"><%= for item <- project.stack do %><span class="chip"><%= HTML.escape(item) %></span><% end %></div>
         <div class="card-links">
           <a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener">source</a>
@@ -68,17 +70,6 @@
       </article>
       <% end %>
     </div>
-    <%= if @others != [] do %>
-    <div class="project-grid compact-grid">
-      <%= for project <- @others do %>
-      <article class="project-card compact-card">
-        <h3><a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener"><%= HTML.escape(project.name) %></a></h3>
-        <p><%= HTML.escape(project.summary) %></p>
-        <div class="chip-row"><%= for item <- project.stack do %><span class="chip"><%= HTML.escape(item) %></span><% end %></div>
-      </article>
-      <% end %>
-    </div>
-    <% end %>
   </section>
 
   <section class="shell section split-section">
