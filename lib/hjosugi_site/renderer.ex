@@ -1,7 +1,7 @@
-defmodule SignalGarden.Renderer do
+defmodule HjosugiSite.Renderer do
   @moduledoc false
 
-  alias SignalGarden.{Config, Store}
+  alias HjosugiSite.{Config, Store}
 
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)

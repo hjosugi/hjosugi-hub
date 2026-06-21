@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.Sg.Collect do
+defmodule Mix.Tasks.Site.Collect do
   use Mix.Task
 
   @shortdoc "Collect RSS/Atom feeds into data/items.term and data/items.json"
 
-  alias SignalGarden.{Collector, Config, Store}
+  alias HjosugiSite.{Collector, Config, Store}
 
   @impl true
   def run(args) do

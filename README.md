@@ -1,4 +1,4 @@
-# Signal Garden
+# Hjosugi Site
 
 An Elixir-powered static portfolio and public technical-signal radar.
 
@@ -12,8 +12,8 @@ Requires Elixir 1.16 or newer.
 
 ```bash
 mix test
-mix sg.collect
-mix sg.export --out public
+mix site.collect
+mix site.export --out public
 ```
 
 Open `public/index.html` for the portfolio and `public/signals/index.html` for
@@ -32,8 +32,8 @@ browser `fetch()` can load `data/items.json`.
 GitHub Pages is the cheapest path here: no always-on server, no database, and no
 paid worker. The included Pages workflow runs every six hours:
 
-1. `mix sg.collect --timeout 20000 --workers 6 --max-items 1000`
-2. `mix sg.export --out public`
+1. `mix site.collect --timeout 20000 --workers 6 --max-items 1000`
+2. `mix site.export --out public`
 3. Deploys `public/` with `actions/deploy-pages`
 
 Enable GitHub Pages with "GitHub Actions" as the source and push `main`.

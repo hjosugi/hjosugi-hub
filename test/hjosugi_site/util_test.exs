@@ -1,7 +1,7 @@
-defmodule SignalGarden.UtilTest do
+defmodule HjosugiSite.UtilTest do
   use ExUnit.Case, async: true
 
-  alias SignalGarden.Util
+  alias HjosugiSite.Util
 
   test "cleans html and decodes common entities" do
     assert Util.clean_text("<p>A &amp; B</p>") == "A & B"

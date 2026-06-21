@@ -1,4 +1,4 @@
-defmodule SignalGarden.HTML do
+defmodule HjosugiSite.HTML do
   @moduledoc false
 
   def escape(nil), do: ""

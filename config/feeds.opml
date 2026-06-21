@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
-  <head><title>Signal Garden starter feeds</title></head>
+  <head><title>Hjosugi Site starter feeds</title></head>
   <body>
     <outline text="Google and cloud official">
       <outline type="rss" text="Google Cloud Blog" xmlUrl="https://cloudblog.withgoogle.com/rss/" htmlUrl="https://cloud.google.com/blog/"/>

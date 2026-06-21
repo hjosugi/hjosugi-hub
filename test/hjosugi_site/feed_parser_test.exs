@@ -1,7 +1,7 @@
-defmodule SignalGarden.FeedParserTest do
+defmodule HjosugiSite.FeedParserTest do
   use ExUnit.Case, async: true
 
-  alias SignalGarden.FeedParser
+  alias HjosugiSite.FeedParser
 
   test "parses RSS items into normalized items" do
     feed = %{id: "sample", name: "Sample Feed", url: "https://example.com/feed.xml", kind: "rss", tags: ["sample"]}

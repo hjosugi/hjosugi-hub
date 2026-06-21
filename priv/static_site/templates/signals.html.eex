@@ -1,4 +1,4 @@
-<% alias SignalGarden.HTML %>
+<% alias HjosugiSite.HTML %>
 <!doctype html>
 <html lang="en">
 <head>
@@ -26,7 +26,7 @@
 <main class="shell inbox-shell" data-signal-app data-items-url="../data/items.json">
   <section class="inbox-header">
     <div>
-      <p class="terminal-line"><span class="prompt">$</span> signal-garden static search</p>
+      <p class="terminal-line"><span class="prompt">$</span> hjosugi-site static search</p>
       <h1>Signal radar</h1>
       <p><span data-total-count><%= length(@items) %></span> indexed items / rebuilt <%= HTML.escape(@generated_text) %> / press <kbd>/</kbd> to search</p>
     </div>

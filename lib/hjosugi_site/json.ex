@@ -1,4 +1,4 @@
-defmodule SignalGarden.JSON do
+defmodule HjosugiSite.JSON do
   @moduledoc false
 
   def encode!(value), do: value |> encode_value() |> IO.iodata_to_binary()

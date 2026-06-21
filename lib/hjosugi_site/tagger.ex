@@ -1,7 +1,7 @@
-defmodule SignalGarden.Tagger do
+defmodule HjosugiSite.Tagger do
   @moduledoc false
 
-  alias SignalGarden.Util
+  alias HjosugiSite.Util
 
   @rules [
     {"google-cloud", ["google cloud", "gcp", "bigquery", "cloud run", "spanner", "vertex ai"]},

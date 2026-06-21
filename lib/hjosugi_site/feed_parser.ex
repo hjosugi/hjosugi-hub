@@ -1,7 +1,7 @@
-defmodule SignalGarden.FeedParser do
+defmodule HjosugiSite.FeedParser do
   @moduledoc false
 
-  alias SignalGarden.{Item, Tagger, Util}
+  alias HjosugiSite.{Item, Tagger, Util}
 
   def parse(body, feed, now \\ DateTime.utc_now()) do
     xml = to_string(body)

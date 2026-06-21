@@ -1,7 +1,7 @@
-defmodule SignalGarden.Store do
+defmodule HjosugiSite.Store do
   @moduledoc false
 
-  alias SignalGarden.{Item, JSON, Util}
+  alias HjosugiSite.{Item, JSON, Util}
 
   def read_items(path) do
     if File.exists?(path) do

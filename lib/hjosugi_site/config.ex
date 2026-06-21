@@ -1,4 +1,4 @@
-defmodule SignalGarden.Config do
+defmodule HjosugiSite.Config do
   @moduledoc false
 
   def site(path \\ "config/site.exs"), do: load!(path)

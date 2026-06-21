@@ -1,4 +1,4 @@
-defmodule SignalGarden do
+defmodule HjosugiSite do
   @moduledoc """
   Static portfolio and public technical-signal collector.
 

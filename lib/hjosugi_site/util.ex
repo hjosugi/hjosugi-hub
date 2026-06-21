@@ -1,4 +1,4 @@
-defmodule SignalGarden.Util do
+defmodule HjosugiSite.Util do
   @moduledoc false
 
   @tag_trim ~r/[-\/#]+$/u

@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.Sg.Export do
+defmodule Mix.Tasks.Site.Export do
   use Mix.Task
 
   @shortdoc "Export the static GitHub Pages site"
 
-  alias SignalGarden.{Config, Renderer, Store}
+  alias HjosugiSite.{Config, Renderer, Store}
 
   @impl true
   def run(args) do

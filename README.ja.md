@@ -1,4 +1,4 @@
-# Signal Garden
+# Hjosugi Site
 
 自己紹介ポートフォリオと、技術情報収集・検索ページを1つにしたElixirプロジェクトです。
 公開先はGitHub Pagesを想定しており、常時起動サーバーなしで安く運用できます。
@@ -7,8 +7,8 @@
 
 ```bash
 mix test
-mix sg.collect
-mix sg.export --out public
+mix site.collect
+mix site.export --out public
 ```
 
 生成後、`public/index.html` が自己紹介ページ、`public/signals/index.html` が情報収集ページです。

@@ -11,10 +11,10 @@ fmt-check:
 check: test export-static
 
 collect:
-	mix sg.collect
+	mix site.collect
 
 export-static:
-	mix sg.export --out public
+	mix site.export --out public
 
 clean:
 	rm -rf _build public data/items.term data/collection-report.json

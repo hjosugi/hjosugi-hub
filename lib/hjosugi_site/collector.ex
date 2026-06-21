@@ -1,7 +1,7 @@
-defmodule SignalGarden.Collector do
+defmodule HjosugiSite.Collector do
   @moduledoc false
 
-  alias SignalGarden.{Fetcher, Store}
+  alias HjosugiSite.{Fetcher, Store}
 
   def collect(feeds, opts \\ []) do
     timeout_ms = Keyword.get(opts, :timeout_ms, 15_000)

@@ -1,7 +1,7 @@
 (() => {
   const body = document.body;
   const toggle = document.getElementById("crt-toggle");
-  const stored = localStorage.getItem("signal-garden-crt");
+  const stored = localStorage.getItem("hjosugi-site-crt");
   if (stored === "off") {
     body.classList.add("crt-off");
     if (toggle) {
@@ -12,7 +12,7 @@
 
   toggle?.addEventListener("click", () => {
     const off = body.classList.toggle("crt-off");
-    localStorage.setItem("signal-garden-crt", off ? "off" : "on");
+    localStorage.setItem("hjosugi-site-crt", off ? "off" : "on");
     toggle.textContent = off ? "crt:off" : "crt:on";
     toggle.setAttribute("aria-pressed", String(!off));
   });

@@ -1,7 +1,7 @@
-defmodule SignalGarden.JSONTest do
+defmodule HjosugiSite.JSONTest do
   use ExUnit.Case, async: true
 
-  alias SignalGarden.JSON
+  alias HjosugiSite.JSON
 
   test "encodes nested values" do
     assert JSON.encode!(%{name: "a&b", tags: ["x", "y"], ok: true}) ==

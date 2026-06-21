@@ -1,4 +1,4 @@
-defmodule SignalGarden.Item do
+defmodule HjosugiSite.Item do
   @moduledoc false
 
   defstruct [

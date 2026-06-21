@@ -17,4 +17,4 @@ jobs:
           otp-version: "27.x"
           elixir-version: "1.18.x"
       - run: mix test
-      - run: mix sg.export --out public
+      - run: mix site.export --out public

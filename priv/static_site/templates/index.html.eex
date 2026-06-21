@@ -1,4 +1,4 @@
-<% alias SignalGarden.HTML %>
+<% alias HjosugiSite.HTML %>
 <!doctype html>
 <html lang="en">
 <head>
@@ -96,7 +96,7 @@
 
   <section class="shell section signal-callout">
     <div>
-      <p class="terminal-line"><span class="prompt">$</span> mix sg.collect</p>
+      <p class="terminal-line"><span class="prompt">$</span> mix site.collect</p>
       <h2>A public radar for technical change</h2>
       <p>The signal page is rebuilt from RSS, Atom, and YouTube feeds by GitHub Actions. It stays cheap because the deployed site is static.</p>
     </div>

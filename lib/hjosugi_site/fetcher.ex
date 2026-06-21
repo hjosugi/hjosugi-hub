@@ -1,7 +1,7 @@
-defmodule SignalGarden.Fetcher do
+defmodule HjosugiSite.Fetcher do
   @moduledoc false
 
-  alias SignalGarden.FeedParser
+  alias HjosugiSite.FeedParser
 
   @max_feed_bytes 5 * 1024 * 1024
 
@@ -50,7 +50,7 @@ defmodule SignalGarden.Fetcher do
 
   defp headers do
     [
-      {~c"user-agent", ~c"signal-garden/0.2 (+https://github.com/hjosugi/signal-garden)"},
+      {~c"user-agent", ~c"hjosugi-site/0.2 (+https://github.com/hjosugi/hjosugi-site)"},
       {~c"accept", ~c"application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.1"}
     ]
   end

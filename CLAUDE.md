@@ -7,8 +7,8 @@ This project is an Elixir static-site pipeline for GitHub Pages.
 ```bash
 mix format --check-formatted
 mix test
-mix sg.collect
-mix sg.export --out public
+mix site.collect
+mix site.export --out public
 ```
 
 ## Rules
