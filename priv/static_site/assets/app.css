@@ -285,9 +285,10 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 @media (max-width: 560px) {
   .shell { width: min(100% - 22px, 1120px); }
   .site-header nav .nav-link:nth-child(n+4) { display: none; }
-  .hero { padding-top: 28px; }
+  .hero { padding: 28px 0 28px; }
   .inbox-shell { padding-top: 22px; }
   .gallery-shell { padding-top: 22px; }
+  .section { padding: 40px 0; }
   .status-strip { grid-template-columns: 1fr; }
   .status-strip div { border-right: 0; border-bottom: 1px solid var(--line); }
   .status-strip div:last-child { border-bottom: 0; }

@@ -40,7 +40,9 @@
           obs.unobserve(entry.target);
         }
       },
-      { threshold: 0.12 }
+      // Reveal a bit before the section scrolls into view so content appears
+      // with less scrolling instead of popping in late.
+      { threshold: 0, rootMargin: "0px 0px 20% 0px" }
     );
     for (const section of document.querySelectorAll(".section")) {
       section.classList.add("reveal");
