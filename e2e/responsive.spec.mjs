@@ -90,13 +90,38 @@ test("news tab scopes results to aggregator sources", async ({ page }) => {
   expect(count).toBeGreaterThan(0);
 });
 
-test("radar tabs link across the three scoped pages", async ({ page }) => {
+test("tabs are ordered news, github, all", async ({ page }) => {
   await page.goto("/radar/", { waitUntil: "networkidle" });
-  await expect(page.locator(".radar-tab")).toHaveCount(3);
+  await expect(page.locator(".radar-tab")).toHaveText(["news", "github", "all"]);
   await expect(page.locator(".radar-tab.active")).toHaveText("all");
-  await page.locator(".radar-tab", { hasText: "news" }).click();
-  await page.waitForURL("**/radar/news/");
-  await expect(page.locator(".radar-tab.active")).toHaveText("news");
+});
+
+test("switching tabs filters in place without a full page reload", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  // A marker on window survives a client-side switch but not a document reload.
+  await page.evaluate(() => {
+    window.__noReload = true;
+  });
+
+  await page.locator(".radar-tab", { hasText: "github" }).click();
+  await page.waitForURL("**/radar/github/");
+  await page.waitForSelector(".radar-card");
+  await expect(page.locator(".radar-tab.active")).toHaveText("github");
+  expect(await page.evaluate(() => window.__noReload === true)).toBe(true);
+
+  // The view is now scoped: every card links to github.com.
+  const hosts = await page
+    .locator(".radar-card h2 a")
+    .evaluateAll((els) => els.map((e) => new URL(e.href).hostname));
+  expect(hosts.length).toBeGreaterThan(0);
+  for (const host of hosts) expect(host === "github.com" || host.endsWith(".github.com")).toBe(true);
+
+  // Back/forward also switches category in place.
+  await page.goBack();
+  await page.waitForURL(/\/radar\/$/);
+  expect(await page.evaluate(() => window.__noReload === true)).toBe(true);
+  await expect(page.locator(".radar-tab.active")).toHaveText("all");
 });
 
 test("about page renders its project and skill sections opaquely", async ({ page }) => {

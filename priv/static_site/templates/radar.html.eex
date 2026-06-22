@@ -41,9 +41,9 @@
   </section>
 
   <nav class="radar-tabs" aria-label="Radar categories">
-    <a class="radar-tab<%= if @category == "all", do: " active" %>" href="<%= @root %>radar/"<%= if @category == "all", do: " aria-current=\"page\"" %>>all</a>
-    <a class="radar-tab<%= if @category == "github", do: " active" %>" href="<%= @root %>radar/github/"<%= if @category == "github", do: " aria-current=\"page\"" %>>github</a>
-    <a class="radar-tab<%= if @category == "news", do: " active" %>" href="<%= @root %>radar/news/"<%= if @category == "news", do: " aria-current=\"page\"" %>>news</a>
+    <a class="radar-tab<%= if @category == "news", do: " active" %>" data-category="news" href="<%= @root %>radar/news/"<%= if @category == "news", do: " aria-current=\"page\"" %>>news</a>
+    <a class="radar-tab<%= if @category == "github", do: " active" %>" data-category="github" href="<%= @root %>radar/github/"<%= if @category == "github", do: " aria-current=\"page\"" %>>github</a>
+    <a class="radar-tab<%= if @category == "all", do: " active" %>" data-category="all" href="<%= @root %>radar/"<%= if @category == "all", do: " aria-current=\"page\"" %>>all</a>
   </nav>
 
   <form class="search-form" id="static-search-form" role="search">

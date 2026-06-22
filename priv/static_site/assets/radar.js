@@ -20,10 +20,17 @@ import { prepare, rank, facets } from "./radar-search.js";
   // The landing view shows only the last N days; search opens the full archive.
   const RECENT_DAYS = 30;
 
-  // Category-scoped pages: /radar/ (all), /radar/github/ (links to github.com),
-  // /radar/news/ (aggregator sources like Hacker News and Lobsters). The scope
-  // is applied once at load so search, facets, and counts stay within it.
-  const CATEGORY = app.dataset.category || "all";
+  // Category-scoped views: all (/radar/), github (/radar/github/, links to
+  // github.com), news (/radar/news/, aggregator sources). Each is its own URL
+  // for deep links and no-JS, but switching tabs is client-side (no reload):
+  // the category is a mutable filter re-applied over the items already loaded.
+  let category = app.dataset.category || categoryFromPath();
+
+  function categoryFromPath() {
+    if (/\/radar\/github\/?$/.test(location.pathname)) return "github";
+    if (/\/radar\/news\/?$/.test(location.pathname)) return "news";
+    return "all";
+  }
 
   function isGithubUrl(url) {
     try {
@@ -35,8 +42,8 @@ import { prepare, rank, facets } from "./radar-search.js";
   }
 
   function inCategory(item) {
-    if (CATEGORY === "github") return isGithubUrl(item.url);
-    if (CATEGORY === "news") return item.source_kind === "aggregator";
+    if (category === "github") return isGithubUrl(item.url);
+    if (category === "news") return item.source_kind === "aggregator";
     return true;
   }
 
@@ -62,12 +69,20 @@ import { prepare, rank, facets } from "./radar-search.js";
     wide.addEventListener("change", syncFilters);
   }
 
+  let allItems = [];
   let items = [];
-  // Computed once after load and reused every render (counts never change).
+  // Recomputed whenever the category changes (counts and facets are scoped).
   let tagFacets = [];
   let sourceFacets = [];
   let uniqueTags = [];
   let uniqueSources = [];
+
+  // Re-scope the loaded items to the active category and rebuild its index.
+  function applyCategory() {
+    items = allItems.filter(inCategory);
+    if (totalCountNode) totalCountNode.textContent = String(items.length);
+    indexData();
+  }
 
   function indexData() {
     const tags = new Set();
@@ -127,9 +142,9 @@ import { prepare, rank, facets } from "./radar-search.js";
       return response.json();
     })
     .then((data) => {
-      items = (Array.isArray(data) ? data : []).filter(inCategory).map(prepare);
-      if (totalCountNode) totalCountNode.textContent = String(items.length);
-      indexData();
+      allItems = (Array.isArray(data) ? data : []).map(prepare);
+      applyCategory();
+      updateActiveTab();
       updateFromLocation();
     })
     .catch(() => {
@@ -143,7 +158,39 @@ import { prepare, rank, facets } from "./radar-search.js";
     navigate(withParam(currentParams(), "q", input.value.trim()));
   });
 
-  window.addEventListener("popstate", updateFromLocation);
+  window.addEventListener("popstate", switchFromLocation);
+
+  // Tabs switch category without a full page load: intercept the click, push the
+  // tab's URL, then re-scope and re-render in place.
+  const tabs = [...app.querySelectorAll(".radar-tab")];
+  for (const tab of tabs) {
+    tab.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
+      event.preventDefault();
+      closeSuggest();
+      history.pushState(null, "", tab.getAttribute("href"));
+      switchFromLocation();
+    });
+  }
+
+  function updateActiveTab() {
+    for (const tab of tabs) {
+      const active = tab.dataset.category === category;
+      tab.classList.toggle("active", active);
+      if (active) tab.setAttribute("aria-current", "page");
+      else tab.removeAttribute("aria-current");
+    }
+  }
+
+  function switchFromLocation() {
+    const next = categoryFromPath();
+    if (next !== category) {
+      category = next;
+      applyCategory();
+      updateActiveTab();
+    }
+    updateFromLocation();
+  }
 
   function updateFromLocation() {
     const params = currentParams();
