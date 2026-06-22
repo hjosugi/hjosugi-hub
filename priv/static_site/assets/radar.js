@@ -40,6 +40,28 @@ import { prepare, rank, facets } from "./radar-search.js";
     return true;
   }
 
+  // The link's host, shown in each card so it is obvious where an item points
+  // (e.g. why a Hacker News story appears on the github page: it links github.com).
+  function linkHost(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch (_) {
+      return "";
+    }
+  }
+
+  // On phones the facet lists are long, so the filter panel is a disclosure that
+  // stays collapsed; on wider screens it is always open as a sidebar.
+  const filterDisclosure = app.querySelector(".filter-disclosure");
+  if (filterDisclosure) {
+    const wide = window.matchMedia("(min-width: 821px)");
+    const syncFilters = () => {
+      filterDisclosure.open = wide.matches;
+    };
+    syncFilters();
+    wide.addEventListener("change", syncFilters);
+  }
+
   let items = [];
   // Computed once after load and reused every render (counts never change).
   let tagFacets = [];
@@ -214,8 +236,10 @@ import { prepare, rank, facets } from "./radar-search.js";
   // --- cards -------------------------------------------------------------
 
   function renderCard(item) {
+    const host = linkHost(item.url);
     const meta = el("div", { class: "radar-meta" }, [
       el("span", { text: item.source_name || "unknown source" }),
+      host ? el("span", { class: "radar-host", text: host }) : null,
       el("span", { text: item._date }),
       item.source_kind ? el("span", { text: item.source_kind }) : null,
       item.score > 0 ? el("span", { class: "radar-score", text: "▲ " + item.score }) : null,

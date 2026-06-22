@@ -60,19 +60,24 @@
 
   <div class="inbox-layout">
     <aside class="filter-panel">
-      <div class="filter-section">
-        <h2>saved</h2>
-        <div data-saved-facets></div>
-      </div>
-      <div class="filter-section">
-        <h2>tags</h2>
-        <div data-tag-facets></div>
-      </div>
-      <div class="filter-section">
-        <h2>sources</h2>
-        <div data-source-facets></div>
-      </div>
-      <p class="static-note">Saved items live only in this browser (localStorage). This page is public — anything deployed here is public too.</p>
+      <details class="filter-disclosure">
+        <summary class="filter-summary">filters <span class="filter-summary-hint">tags · sources</span></summary>
+        <div class="filter-groups">
+          <div class="filter-section">
+            <h2>saved</h2>
+            <div data-saved-facets></div>
+          </div>
+          <div class="filter-section">
+            <h2>tags</h2>
+            <div data-tag-facets></div>
+          </div>
+          <div class="filter-section">
+            <h2>sources</h2>
+            <div data-source-facets></div>
+          </div>
+          <p class="static-note">Saved items live only in this browser (localStorage). This page is public — anything deployed here is public too.</p>
+        </div>
+      </details>
     </aside>
 
     <section class="results" aria-live="polite">

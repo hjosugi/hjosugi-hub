@@ -231,6 +231,11 @@ h1 { font-size: clamp(3rem, 9vw, 7.4rem); margin: 0; max-width: 13ch; }
 .filter-link { display: flex; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--muted); padding: 6px 8px; border-radius: 6px; font-size: 0.82rem; }
 .filter-link:hover, .filter-link.active { color: var(--text); background: var(--panel-2); }
 .filter-link b { font-weight: 500; color: var(--accent); }
+/* Filters are a plain sidebar on desktop; the disclosure summary only appears
+   on small screens (see the max-width media query), where it collapses. */
+.filter-disclosure { border: 0; }
+.filter-summary { display: none; }
+.radar-host { color: var(--accent); text-transform: none; letter-spacing: 0; }
 .results-topline { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.82rem; margin-bottom: 10px; }
 .radar-card { border-top: 1px solid var(--line); padding: 24px 2px; min-width: 0; }
 .radar-card:first-of-type { border-top: 0; }
@@ -266,8 +271,15 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
   .project-grid { grid-template-columns: 1fr; }
   .radar-callout, .inbox-header { align-items: start; flex-direction: column; }
   .inbox-layout { grid-template-columns: 1fr; }
-  .filter-panel { position: static; max-height: none; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .filter-section + .filter-section { margin-top: 0; }
+  .filter-panel { position: static; max-height: none; overflow: visible; padding: 0; border: 0; background: transparent; }
+  .filter-disclosure { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(11, 23, 20, 0.72); }
+  .filter-summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; list-style: none; padding: 12px 14px; color: var(--text); font-size: 0.85rem; }
+  .filter-summary::-webkit-details-marker { display: none; }
+  .filter-summary::after { content: "▸"; color: var(--muted); transition: transform 0.15s ease; }
+  .filter-disclosure[open] .filter-summary::after { transform: rotate(90deg); }
+  .filter-summary-hint { color: var(--muted); font-size: 0.72rem; }
+  .filter-groups { padding: 0 14px 14px; }
+  .filter-section + .filter-section { margin-top: 16px; }
 }
 
 @media (max-width: 560px) {
@@ -277,13 +289,19 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
   .status-strip { grid-template-columns: 1fr; }
   .status-strip div { border-right: 0; border-bottom: 1px solid var(--line); }
   .status-strip div:last-child { border-bottom: 0; }
-  .search-row { grid-template-columns: auto 1fr; }
-  .search-row .primary-button { grid-column: 1 / -1; margin-top: 5px; }
-  .filter-panel { grid-template-columns: 1fr; }
+  .search-row { grid-template-columns: auto 1fr; padding: 5px; }
+  .search-row input { padding: 9px 6px; }
+  .search-row .primary-button { grid-column: 1 / -1; margin-top: 5px; min-height: 40px; padding: 0 12px; font-size: 0.9rem; font-weight: 650; }
+  .search-form > label { font-size: 0.72rem; }
   .radar-footer { align-items: start; flex-direction: column; }
   .footer-grid { align-items: start; flex-direction: column; justify-content: center; }
-  .inbox-header h1 { white-space: normal; }
-  .runtime-panel { white-space: normal; }
+  .inbox-header h1 { white-space: normal; font-size: 1.5rem; }
+  .inbox-header p { font-size: 0.82rem; }
+  .runtime-panel { white-space: normal; font-size: 0.82rem; }
+  .radar-tab { padding: 5px 13px; font-size: 0.78rem; }
+  .radar-card { padding: 18px 2px; }
+  .radar-card h2 { font-size: 1.08rem; }
+  .radar-card > p { font-size: 0.9rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

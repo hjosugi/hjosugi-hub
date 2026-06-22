@@ -91,6 +91,22 @@ test("radar tabs link across the three scoped pages", async ({ page }) => {
   await expect(page.locator(".radar-tab.active")).toHaveText("news");
 });
 
+test("filters collapse on mobile and stay open on wider screens", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  const open = await page.locator(".filter-disclosure").evaluate((d) => d.open);
+  const wide = (page.viewportSize()?.width ?? 0) >= 821;
+  expect(open).toBe(wide);
+});
+
+test("github cards show the github.com link host", async ({ page }) => {
+  await page.goto("/radar/github/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  const hosts = await page.locator(".radar-card .radar-host").allTextContents();
+  expect(hosts.length).toBeGreaterThan(0);
+  for (const host of hosts) expect(host).toMatch(/(^|\.)github\.com$/);
+});
+
 test("static assets are cache-busted with a version query", async ({ page }) => {
   // Fail the build if a deploy could be masked by stale CSS/JS caches.
   const requests = [];
