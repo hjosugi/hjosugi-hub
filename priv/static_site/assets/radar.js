@@ -20,17 +20,10 @@ import { prepare, rank, facets } from "./radar-search.js";
   // The landing view shows only the last N days; search opens the full archive.
   const RECENT_DAYS = 30;
 
-  // Category-scoped views: all (/radar/), github (/radar/github/, links to
-  // github.com), news (/radar/news/, aggregator sources). Each is its own URL
-  // for deep links and no-JS, but switching tabs is client-side (no reload):
-  // the category is a mutable filter re-applied over the items already loaded.
-  let category = app.dataset.category || categoryFromPath();
-
-  function categoryFromPath() {
-    if (/\/radar\/github\/?$/.test(location.pathname)) return "github";
-    if (/\/radar\/news\/?$/.test(location.pathname)) return "news";
-    return "all";
-  }
+  // This template backs two pages: the full radar (/radar/) and a separate
+  // GitHub picks page (/popular/, links to github.com). The page declares its
+  // scope via data-category; it is fixed for the page (no in-page tabs).
+  const category = app.dataset.category || "all";
 
   function isGithubUrl(url) {
     try {
@@ -43,7 +36,6 @@ import { prepare, rank, facets } from "./radar-search.js";
 
   function inCategory(item) {
     if (category === "github") return isGithubUrl(item.url);
-    if (category === "news") return item.source_kind === "aggregator";
     return true;
   }
 
@@ -144,7 +136,6 @@ import { prepare, rank, facets } from "./radar-search.js";
     .then((data) => {
       allItems = (Array.isArray(data) ? data : []).map(prepare);
       applyCategory();
-      updateActiveTab();
       updateFromLocation();
     })
     .catch(() => {
@@ -158,39 +149,7 @@ import { prepare, rank, facets } from "./radar-search.js";
     navigate(withParam(currentParams(), "q", input.value.trim()));
   });
 
-  window.addEventListener("popstate", switchFromLocation);
-
-  // Tabs switch category without a full page load: intercept the click, push the
-  // tab's URL, then re-scope and re-render in place.
-  const tabs = [...app.querySelectorAll(".radar-tab")];
-  for (const tab of tabs) {
-    tab.addEventListener("click", (event) => {
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
-      event.preventDefault();
-      closeSuggest();
-      history.pushState(null, "", tab.getAttribute("href"));
-      switchFromLocation();
-    });
-  }
-
-  function updateActiveTab() {
-    for (const tab of tabs) {
-      const active = tab.dataset.category === category;
-      tab.classList.toggle("active", active);
-      if (active) tab.setAttribute("aria-current", "page");
-      else tab.removeAttribute("aria-current");
-    }
-  }
-
-  function switchFromLocation() {
-    const next = categoryFromPath();
-    if (next !== category) {
-      category = next;
-      applyCategory();
-      updateActiveTab();
-    }
-    updateFromLocation();
-  }
+  window.addEventListener("popstate", updateFromLocation);
 
   function updateFromLocation() {
     const params = currentParams();

@@ -19,7 +19,8 @@
     <a class="brand" href="<%= @root %>" aria-label="Home"><span class="prompt">~/</span><%= HTML.escape(@site.handle) %></a>
     <nav aria-label="Primary navigation">
       <a class="nav-link" href="<%= @root %>">about</a>
-      <a class="nav-link active" href="<%= @root %>radar/">radar</a>
+      <a class="nav-link<%= if @category != "github", do: " active" %>" href="<%= @root %>radar/">radar</a>
+      <a class="nav-link<%= if @category == "github", do: " active" %>" href="<%= @root %>popular/">popular</a>
       <a class="nav-link" href="<%= @root %>gallery/">gallery</a>
       <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
     </nav>
@@ -29,9 +30,15 @@
 <main class="shell inbox-shell" data-radar-app data-items-url="<%= @root %>data/items.json" data-category="<%= @category %>">
   <section class="inbox-header">
     <div>
+      <%= if @category == "github" do %>
+      <p class="terminal-line"><span class="prompt">$</span> git ls-remote popular</p>
+      <h1>Popular on GitHub</h1>
+      <p><span data-total-count><%= length(@items) %></span> github links surfaced on the radar / rebuilt <%= HTML.escape(@generated_text) %></p>
+      <% else %>
       <p class="terminal-line"><span class="prompt">$</span> hjosugi-hub static search</p>
       <h1>Technical radar</h1>
       <p><span data-total-count><%= length(@items) %></span> indexed items / rebuilt <%= HTML.escape(@generated_text) %> / press <kbd>/</kbd> to search</p>
+      <% end %>
     </div>
     <div class="runtime-panel">
       <span class="status-dot" aria-hidden="true"></span>
@@ -40,12 +47,6 @@
       <span><%= @enabled_feeds %> feeds</span>
     </div>
   </section>
-
-  <nav class="radar-tabs" aria-label="Radar categories">
-    <a class="radar-tab<%= if @category == "news", do: " active" %>" data-category="news" href="<%= @root %>radar/news/"<%= if @category == "news", do: " aria-current=\"page\"" %>>news</a>
-    <a class="radar-tab<%= if @category == "github", do: " active" %>" data-category="github" href="<%= @root %>radar/github/"<%= if @category == "github", do: " aria-current=\"page\"" %>>github</a>
-    <a class="radar-tab<%= if @category == "all", do: " active" %>" data-category="all" href="<%= @root %>radar/"<%= if @category == "all", do: " aria-current=\"page\"" %>>all</a>
-  </nav>
 
   <form class="search-form" id="static-search-form" role="search">
     <label for="radar-search">Search title, summary, content, source, and tags</label>

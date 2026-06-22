@@ -57,14 +57,12 @@ defmodule HjosugiHub.Renderer do
     :ok
   end
 
-  # The radar is split into category-scoped pages with shared tabs. The full
-  # view lives at /radar/; /radar/github/ and /radar/news/ filter client-side
-  # (by link host and aggregator source kind). `root` is the relative path back
-  # to the site root so assets, data, and tab links resolve from each depth.
+  # The radar template backs two separate pages: /radar/ (the full searchable
+  # reading list) and /popular/ (a GitHub-picks page scoped to github.com
+  # links). `root` is the relative path back to the site root.
   @radar_pages [
     {"radar", "all", "../"},
-    {"radar/github", "github", "../../"},
-    {"radar/news", "news", "../../"}
+    {"popular", "github", "../"}
   ]
 
   defp write_radar_pages(out_dir, assigns) do
@@ -137,6 +135,7 @@ defmodule HjosugiHub.Renderer do
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       <url><loc>#{base_url}/</loc></url>
       <url><loc>#{base_url}/radar/</loc></url>
+      <url><loc>#{base_url}/popular/</loc></url>
       <url><loc>#{base_url}/gallery/</loc></url>
     </urlset>
     """

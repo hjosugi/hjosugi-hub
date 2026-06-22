@@ -19,6 +19,7 @@
     <nav aria-label="Primary navigation">
       <a class="nav-link active" href="./">about</a>
       <a class="nav-link" href="radar/">radar</a>
+      <a class="nav-link" href="popular/">popular</a>
       <a class="nav-link" href="gallery/">gallery</a>
       <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
     </nav>

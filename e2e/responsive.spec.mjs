@@ -14,8 +14,7 @@ test.beforeEach(async ({ page }) => {
 const PAGES = [
   { name: "about", path: "/", ready: "h1" },
   { name: "radar", path: "/radar/", ready: ".radar-card" },
-  { name: "radar-github", path: "/radar/github/", ready: ".radar-card" },
-  { name: "radar-news", path: "/radar/news/", ready: ".radar-card" },
+  { name: "popular", path: "/popular/", ready: ".radar-card" },
   { name: "gallery", path: "/gallery/", ready: ".char-card" },
 ];
 
@@ -69,10 +68,21 @@ for (const pageDef of PAGES) {
   });
 }
 
-test("github tab scopes results to github.com links", async ({ page }) => {
-  await page.goto("/radar/github/", { waitUntil: "networkidle" });
+test("radar is a single view with no category tabs", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");
-  await expect(page.locator(".radar-tab.active")).toHaveText("github");
+  await expect(page.locator(".radar-tabs")).toHaveCount(0);
+  await expect(page.locator(".radar-tab")).toHaveCount(0);
+  // radar shows the full set, including non-github items (e.g. lobste.rs).
+  const hosts = await page.locator(".radar-card .radar-host").allTextContents();
+  expect(hosts.some((h) => !/github\.com$/.test(h))).toBe(true);
+});
+
+test("popular is a separate page scoped to github.com links", async ({ page }) => {
+  await page.goto("/popular/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  await expect(page.locator("h1")).toHaveText(/Popular on GitHub/i);
+  await expect(page.locator("nav a.active")).toHaveText("popular");
   const hosts = await page
     .locator(".radar-card h2 a")
     .evaluateAll((els) => els.map((e) => new URL(e.href).hostname));
@@ -82,47 +92,10 @@ test("github tab scopes results to github.com links", async ({ page }) => {
   }
 });
 
-test("news tab scopes results to aggregator sources", async ({ page }) => {
-  await page.goto("/radar/news/", { waitUntil: "networkidle" });
-  await page.waitForSelector(".radar-card");
-  await expect(page.locator(".radar-tab.active")).toHaveText("news");
-  // Aggregator items carry the source in the card meta (Hacker News / Lobsters).
-  const count = await page.locator(".radar-card").count();
-  expect(count).toBeGreaterThan(0);
-});
-
-test("tabs are ordered news, github, all", async ({ page }) => {
-  await page.goto("/radar/", { waitUntil: "networkidle" });
-  await expect(page.locator(".radar-tab")).toHaveText(["news", "github", "all"]);
-  await expect(page.locator(".radar-tab.active")).toHaveText("all");
-});
-
-test("switching tabs filters in place without a full page reload", async ({ page }) => {
-  await page.goto("/radar/", { waitUntil: "networkidle" });
-  await page.waitForSelector(".radar-card");
-  // A marker on window survives a client-side switch but not a document reload.
-  await page.evaluate(() => {
-    window.__noReload = true;
-  });
-
-  await page.locator(".radar-tab", { hasText: "github" }).click();
-  await page.waitForURL("**/radar/github/");
-  await page.waitForSelector(".radar-card");
-  await expect(page.locator(".radar-tab.active")).toHaveText("github");
-  expect(await page.evaluate(() => window.__noReload === true)).toBe(true);
-
-  // The view is now scoped: every card links to github.com.
-  const hosts = await page
-    .locator(".radar-card h2 a")
-    .evaluateAll((els) => els.map((e) => new URL(e.href).hostname));
-  expect(hosts.length).toBeGreaterThan(0);
-  for (const host of hosts) expect(host === "github.com" || host.endsWith(".github.com")).toBe(true);
-
-  // Back/forward also switches category in place.
-  await page.goBack();
-  await page.waitForURL(/\/radar\/$/);
-  expect(await page.evaluate(() => window.__noReload === true)).toBe(true);
-  await expect(page.locator(".radar-tab.active")).toHaveText("all");
+test("nav exposes radar and popular as separate pages", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator('nav a[href="radar/"]')).toHaveCount(1);
+  await expect(page.locator('nav a[href="popular/"]')).toHaveCount(1);
 });
 
 test("gallery introduces both mascots with pixel sprites and pose frames", async ({ page }) => {
@@ -158,8 +131,8 @@ test("filters collapse on mobile and stay open on wider screens", async ({ page 
   expect(open).toBe(wide);
 });
 
-test("github cards show the github.com link host", async ({ page }) => {
-  await page.goto("/radar/github/", { waitUntil: "networkidle" });
+test("cards show the link host in their meta", async ({ page }) => {
+  await page.goto("/popular/", { waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");
   const hosts = await page.locator(".radar-card .radar-host").allTextContents();
   expect(hosts.length).toBeGreaterThan(0);
@@ -167,7 +140,7 @@ test("github cards show the github.com link host", async ({ page }) => {
 });
 
 test("score renders a labelled points value with a tooltip", async ({ page }) => {
-  await page.goto("/radar/news/", { waitUntil: "networkidle" });
+  await page.goto("/popular/", { waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");
   const score = page.locator(".radar-score").first();
   await expect(score).toHaveText(/▲\s*\d+\s*pts/);
