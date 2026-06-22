@@ -492,8 +492,11 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 
 .char-info h2 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); }
 .char-jp { color: var(--muted); font-size: 0.62em; font-weight: 500; margin-left: 6px; }
-.char-tagline { color: var(--accent-2); margin: 6px 0 12px; }
-.char-bio { color: var(--muted); max-width: 60ch; margin: 0; }
+.char-tagline { color: var(--accent-2); margin: 6px 0 2px; }
+.char-tagline[lang="ja"] { color: var(--muted); margin: 0 0 12px; font-size: 0.92em; }
+.char-bio { color: var(--muted); max-width: 62ch; margin: 0; }
+.char-bio + .char-bio { margin-top: 8px; }
+.char-bio[lang="ja"] { font-size: 0.95em; }
 .char-bio strong { color: var(--accent); font-weight: 700; }
 .char-note { color: var(--accent); }
 

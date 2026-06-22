@@ -29,7 +29,8 @@
   <section class="gallery-hero">
     <p class="terminal-line"><span class="prompt">$</span> ls ~/friends</p>
     <h1>Kofun-kun &amp; friends</h1>
-    <p class="lede">このサイトをうろちょろしているドット絵キャラたち。クリックで挨拶してくれる<a href="<%= @root %>">古墳のペット</a>と、その仲間を紹介します。</p>
+    <p class="lede" lang="en">The little pixel characters that wander around this site — meet the <a href="<%= @root %>">kofun pet</a> and his friends.</p>
+    <p class="lede" lang="ja">このサイトをうろちょろしているドット絵キャラたち。クリックで挨拶してくれる<a href="<%= @root %>">古墳のペット</a>と、その仲間を紹介します。</p>
   </section>
 
   <article class="char-card">
@@ -38,8 +39,10 @@
     </div>
     <div class="char-info">
       <h2>Kofun-kun <span class="char-jp">古墳くん</span></h2>
-      <p class="char-tagline">前方後円墳のすがたをした少年。</p>
-      <p class="char-bio">サイトの下をてくてく歩きまわっています。<strong>ユーグレナ(ミドリムシ)</strong>が大好物で、見つけるとついむしゃむしゃ。つつくとぴょんと跳ねて <span class="char-note">♪</span> を出します。</p>
+      <p class="char-tagline" lang="en">A boy shaped like a keyhole tomb (kofun).</p>
+      <p class="char-tagline" lang="ja">前方後円墳のすがたをした少年。</p>
+      <p class="char-bio" lang="en">He toddles along the bottom of the site. He loves <strong>euglena (midorimushi)</strong> and nibbles it whenever he spots some. Poke him and he hops with a <span class="char-note">♪</span>.</p>
+      <p class="char-bio" lang="ja">サイトの下をてくてく歩きまわっています。<strong>ユーグレナ(ミドリムシ)</strong>が大好物で、見つけるとついむしゃむしゃ。つつくとぴょんと跳ねて <span class="char-note">♪</span> を出します。</p>
       <div class="char-frames char-kofun" aria-label="Kofun-kun pose frames">
         <%= for pose <- Kofun.poses() do %>
         <figure class="frame"><div class="px"><%= Kofun.pose_svg(pose) %></div><figcaption><%= pose %></figcaption></figure>
@@ -54,8 +57,10 @@
     </div>
     <div class="char-info">
       <h2>Dochicken-san <span class="char-jp">ドチキンさん</span></h2>
-      <p class="char-tagline">鶏のすがたをした埴輪(はにわ)。</p>
-      <p class="char-bio">とさかと くちばし、まんまるの埴輪ボディが目印。地面をこつこつ つついて何かを探しています。Kofun-kun の遊び友達。</p>
+      <p class="char-tagline" lang="en">A haniwa shaped like a chicken.</p>
+      <p class="char-tagline" lang="ja">鶏のすがたをした埴輪(はにわ)。</p>
+      <p class="char-bio" lang="en">Spot him by his comb, beak, and round haniwa body. He pecks at the ground hunting for something — Kofun-kun's playmate.</p>
+      <p class="char-bio" lang="ja">とさかと くちばし、まんまるの埴輪ボディが目印。地面をこつこつ つついて何かを探しています。Kofun-kun の遊び友達。</p>
       <div class="char-frames" aria-label="Dochicken-san pose frames">
         <%= for pose <- Dochicken.poses() do %>
         <figure class="frame"><div class="px"><%= Dochicken.pose_svg(pose) %></div><figcaption><%= pose %></figcaption></figure>
@@ -63,8 +68,6 @@
       </div>
     </div>
   </article>
-
-  <p class="static-note">All artwork is a 16x16 pixel grid generated from Elixir — see <code>HjosugiHub.Kofun</code> and <code>HjosugiHub.Dochicken</code>.</p>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
