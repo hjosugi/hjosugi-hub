@@ -242,7 +242,13 @@ import { prepare, rank, facets } from "./radar-search.js";
       host ? el("span", { class: "radar-host", text: host }) : null,
       el("span", { text: item._date }),
       item.source_kind ? el("span", { text: item.source_kind }) : null,
-      item.score > 0 ? el("span", { class: "radar-score", text: "▲ " + item.score }) : null,
+      item.score > 0
+        ? el("span", {
+            class: "radar-score",
+            title: "crowd-vote points (e.g. Hacker News upvotes)",
+            text: "▲ " + item.score + " pts",
+          })
+        : null,
       saveButton(item),
     ]);
 

@@ -107,6 +107,14 @@ test("github cards show the github.com link host", async ({ page }) => {
   for (const host of hosts) expect(host).toMatch(/(^|\.)github\.com$/);
 });
 
+test("score renders a labelled points value with a tooltip", async ({ page }) => {
+  await page.goto("/radar/news/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  const score = page.locator(".radar-score").first();
+  await expect(score).toHaveText(/▲\s*\d+\s*pts/);
+  await expect(score).toHaveAttribute("title", /points/i);
+});
+
 test("static assets are cache-busted with a version query", async ({ page }) => {
   // Fail the build if a deploy could be masked by stale CSS/JS caches.
   const requests = [];

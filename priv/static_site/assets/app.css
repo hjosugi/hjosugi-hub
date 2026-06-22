@@ -365,7 +365,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 }
 .save-btn:hover { color: var(--accent); border-color: var(--accent); }
 .save-btn.saved { color: var(--warning); border-color: var(--warning); }
-.radar-score { color: var(--accent); font-weight: 700; }
+.radar-score { color: var(--accent); font-weight: 700; white-space: nowrap; cursor: help; }
 
 /* 前方後円墳 pixel mascot */
 .kofun-pet {
