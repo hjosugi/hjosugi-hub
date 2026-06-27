@@ -45,6 +45,7 @@ defmodule HjosugiHub.Renderer do
     Store.write_json(Path.join(out_dir, "data/items.json"), public_items)
     Store.write_json(Path.join(out_dir, "data/site.json"), site)
     Store.write_json(Path.join(out_dir, "data/feeds.json"), public_feeds(feeds))
+    Store.write_json(Path.join(out_dir, "health.json"), health(assigns, public_items))
     copy_assets(out_dir, asset_version)
     File.write!(Path.join(out_dir, "static/favicon.svg"), Kofun.favicon_svg())
     File.write!(Path.join(out_dir, ".nojekyll"), "")
@@ -128,6 +129,17 @@ defmodule HjosugiHub.Renderer do
 
   defp robots(""), do: "User-agent: *\nAllow: /\n"
   defp robots(base_url), do: "User-agent: *\nAllow: /\nSitemap: #{base_url}/sitemap.xml\n"
+
+  defp health(assigns, public_items) do
+    %{
+      status: "ok",
+      service: "hjosugi-hub",
+      generated_at: assigns.generated_text,
+      enabled_feeds: assigns.enabled_feeds,
+      item_count: length(public_items),
+      asset_version: assigns.asset_version
+    }
+  end
 
   defp sitemap(base_url) do
     """
