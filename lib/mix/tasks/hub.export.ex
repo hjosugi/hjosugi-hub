@@ -14,6 +14,7 @@ defmodule Mix.Tasks.Hub.Export do
         strict: [
           site: :string,
           feeds: :string,
+          cache: :string,
           data: :string,
           out: :string,
           base_url: :string
@@ -24,7 +25,8 @@ defmodule Mix.Tasks.Hub.Export do
 
     site = Config.site(Keyword.get(opts, :site, "config/site.exs"))
     feeds = Config.feeds(Keyword.get(opts, :feeds, "config/feeds.exs"))
-    items = Store.read_items(Keyword.get(opts, :data, "data/items.term"))
+    cache_path = Keyword.get(opts, :cache, Keyword.get(opts, :data, "radar-cache/items.term"))
+    items = Store.read_items(cache_path)
     out_dir = Keyword.get(opts, :out, "public")
     base_url = Keyword.get(opts, :base_url, System.get_env("PUBLIC_BASE_URL", ""))
 

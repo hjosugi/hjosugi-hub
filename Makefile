@@ -22,4 +22,4 @@ export-static:
 	mix hub.export --out public
 
 clean:
-	rm -rf _build public data/items.term data/collection-report.json
+	rm -rf _build public radar-cache

@@ -18,7 +18,7 @@ mix hub.export --out public
 
 Open `public/index.html` for the portfolio and `public/radar/index.html` for
 the searchable radar index. For the radar page, serve `public/` over HTTP so
-browser `fetch()` can load `data/items.json`.
+browser `fetch()` can load `radar-data/items.json`.
 
 ## E2E / responsive design checks
 
@@ -40,6 +40,8 @@ as CI artifacts by the `e2e` job in [`.github/workflows/ci.yml`](.github/workflo
 
 - `config/site.exs`: profile, links, skills, and selected projects
 - `config/feeds.exs`: RSS/Atom/YouTube feed sources
+- `radar-cache/`: generated local collection cache, ignored by Git
+- `radar-data/items.sample.json`: sample public radar JSON payload
 - `priv/static_site/templates/`: static HTML templates
 - `priv/static_site/assets/`: CSS and browser-side search JavaScript
 
@@ -74,7 +76,7 @@ required.
 it; GitHub Pages receives it from the workflow artifact.
 
 Important: GitHub Pages cannot hide collected data. Anything in
-`public/data/items.json` is public.
+`public/radar-data/items.json` is public.
 
 ## License
 

@@ -1,5 +1,5 @@
 // Zero-dependency static server for the exported `public/` site, used by the
-// Playwright E2E suite. Before serving it seeds `public/data/items.json` with
+// Playwright E2E suite. Before serving it seeds `public/radar-data/items.json` with
 // deterministic fixtures (recent timestamps) so the radar landing view always
 // renders cards to measure. Run `mix hub.export --out public` first.
 import { createServer } from "node:http";
@@ -40,7 +40,7 @@ async function seed() {
     const at = new Date(now - i * 86_400_000).toISOString();
     return { ...item, published_at: at, collected_at: at };
   });
-  await writeFile(join(root, "data", "items.json"), JSON.stringify(seeded), "utf8");
+  await writeFile(join(root, "radar-data", "items.json"), JSON.stringify(seeded), "utf8");
 }
 
 async function serveFile(res, urlPath) {

@@ -21,9 +21,10 @@ defmodule HjosugiHub.Renderer do
       Map.put(assigns, :root, "../")
     )
 
-    Store.write_json(Path.join(out_dir, "data/items.json"), public_items)
-    Store.write_json(Path.join(out_dir, "data/site.json"), site)
-    Store.write_json(Path.join(out_dir, "data/feeds.json"), public_feeds(feeds))
+    remove_legacy_public_data(out_dir)
+    Store.write_json(Path.join(out_dir, "radar-data/items.json"), public_items)
+    Store.write_json(Path.join(out_dir, "radar-data/site.json"), site)
+    Store.write_json(Path.join(out_dir, "radar-data/feeds.json"), public_feeds(feeds))
     Store.write_json(Path.join(out_dir, "health.json"), health(assigns, public_items))
     copy_assets(out_dir, asset_version)
     File.write!(Path.join(out_dir, "static/favicon.svg"), Kofun.favicon_svg())
@@ -35,6 +36,12 @@ defmodule HjosugiHub.Renderer do
     end
 
     :ok
+  end
+
+  defp remove_legacy_public_data(out_dir) do
+    out_dir
+    |> Path.join("data")
+    |> File.rm_rf!()
   end
 
   defp public_items(items, feeds) do

@@ -9,11 +9,8 @@ deps/
 .elixir_ls/
 coverage.out
 public/
-data/items.term
-data/items.json
-data/collection-report.json
+radar-cache/
 *.log
-data/*.tmp
 .DS_Store
 erl_crash.dump
 

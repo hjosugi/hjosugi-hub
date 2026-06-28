@@ -38,16 +38,21 @@ defmodule HjosugiHub.RendererTest do
     ]
 
     try do
+      legacy_data_dir = Path.join(out_dir, "data")
+      File.mkdir_p!(legacy_data_dir)
+      File.write!(Path.join(legacy_data_dir, "items.json"), "[]")
+
       assert :ok = Renderer.export(site, feeds, items, out_dir, "https://example.com/hub/")
 
       assert File.exists?(Path.join(out_dir, "index.html"))
       assert File.exists?(Path.join(out_dir, "radar/index.html"))
       assert File.exists?(Path.join(out_dir, "popular/index.html"))
       assert File.exists?(Path.join(out_dir, "friends/index.html"))
+      refute File.exists?(legacy_data_dir)
 
       radar = File.read!(Path.join(out_dir, "radar/index.html"))
       popular = File.read!(Path.join(out_dir, "popular/index.html"))
-      items_json = File.read!(Path.join(out_dir, "data/items.json"))
+      items_json = File.read!(Path.join(out_dir, "radar-data/items.json"))
       sitemap = File.read!(Path.join(out_dir, "sitemap.xml"))
 
       assert radar =~ ~s(data-category="all")

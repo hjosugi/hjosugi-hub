@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Hub.Collect do
   use Mix.Task
 
-  @shortdoc "Collect RSS/Atom feeds into data/items.term and data/items.json"
+  @shortdoc "Collect RSS/Atom feeds into radar-cache/"
 
   alias HjosugiHub.{Collector, Config, Store}
 
@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Hub.Collect do
       OptionParser.parse(args,
         strict: [
           feeds: :string,
+          cache: :string,
           data: :string,
           json: :string,
           report: :string,
@@ -25,15 +26,15 @@ defmodule Mix.Tasks.Hub.Collect do
     if invalid != [], do: Mix.raise("invalid options: #{inspect(invalid)}")
 
     feeds_path = Keyword.get(opts, :feeds, "config/feeds.exs")
-    data_path = Keyword.get(opts, :data, "data/items.term")
-    json_path = Keyword.get(opts, :json, "data/items.json")
-    report_path = Keyword.get(opts, :report, "data/collection-report.json")
+    cache_path = Keyword.get(opts, :cache, Keyword.get(opts, :data, "radar-cache/items.term"))
+    json_path = Keyword.get(opts, :json, "radar-cache/items.json")
+    report_path = Keyword.get(opts, :report, "radar-cache/collection-report.json")
     timeout_ms = Keyword.get(opts, :timeout, env_int("REQUEST_TIMEOUT_MS", 15_000))
     workers = Keyword.get(opts, :workers, env_int("FEED_WORKERS", 6))
     max_items = Keyword.get(opts, :max_items, env_int("MAX_ITEMS", 1000))
 
     feeds = Config.feeds(feeds_path)
-    existing = Store.read_items(data_path)
+    existing = Store.read_items(cache_path)
 
     result =
       Collector.collect(feeds,
@@ -43,7 +44,7 @@ defmodule Mix.Tasks.Hub.Collect do
         max_items: max_items
       )
 
-    Store.write_items(data_path, result.items)
+    Store.write_items(cache_path, result.items)
     Store.write_json(json_path, Store.public_items(result.items))
     Store.write_json(report_path, result.report)
 

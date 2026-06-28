@@ -13,6 +13,7 @@ mix hub.export --out public
 
 生成後、`public/index.html` が自己紹介ページ、`public/radar/index.html` が情報収集ページです。
 情報収集ページはJSONを `fetch()` するため、ローカル確認時は `public/` をHTTPで配信してください。
+読み込まれる公開JSONは `public/radar-data/items.json` です。
 
 ## 現在できること
 
@@ -50,4 +51,4 @@ GitHub Pagesが解決したURLを `mix hub.export --base-url` に渡すため、
 `public/` は生成物なのでGitにはcommitしません。GitHub Pagesにはworkflow artifactとして渡します。
 
 注意: GitHub Pagesでは非公開Inboxやサーバー側トークン保護はできません。
-`public/data/items.json` に出した情報収集データは公開扱いです。
+`public/radar-data/items.json` に出した情報収集データは公開扱いです。

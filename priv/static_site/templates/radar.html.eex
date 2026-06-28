@@ -26,7 +26,7 @@
     <button class="ghost-button" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
   </div>
 </header>
-<main class="shell inbox-shell" data-radar-app data-items-url="<%= @root %>data/items.json" data-category="<%= @category %>">
+<main class="shell inbox-shell" data-radar-app data-items-url="<%= @root %>radar-data/items.json" data-category="<%= @category %>">
   <section class="inbox-header">
     <div>
       <%= if @category == "github" do %>

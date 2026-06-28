@@ -33,7 +33,7 @@ jobs:
       - name: Restore collected radar cache
         uses: actions/cache@v4
         with:
-          path: data/items.term
+          path: radar-cache/items.term
           key: hjosugi-hub-items-${{ github.run_id }}
           restore-keys: |
             hjosugi-hub-items-
