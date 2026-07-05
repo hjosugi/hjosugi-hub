@@ -65,6 +65,63 @@ defmodule HjosugiHub.StoreTest do
     File.rm(path)
   end
 
+  test "feed state preserves collection health fields" do
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "hjosugi-hub-feed-state-#{System.unique_integer([:positive])}.term"
+      )
+
+    state = %{
+      "feed-a" => %{
+        "etag" => ~s("abc"),
+        "consecutive_failures" => "3",
+        "first_failure_at" => "2026-06-18T00:00:00Z",
+        "last_failure_at" => "2026-06-20T00:00:00Z",
+        "last_success_at" => "2026-06-17T00:00:00Z",
+        "last_checked_at" => "2026-06-20T00:00:00Z",
+        "last_status" => "error",
+        "last_error" => "timeout",
+        "last_response_code" => "0"
+      }
+    }
+
+    Store.write_feed_state(path, state)
+
+    assert Store.read_feed_state(path) == %{
+             "feed-a" => %{
+               etag: ~s("abc"),
+               consecutive_failures: 3,
+               first_failure_at: "2026-06-18T00:00:00Z",
+               last_failure_at: "2026-06-20T00:00:00Z",
+               last_success_at: "2026-06-17T00:00:00Z",
+               last_checked_at: "2026-06-20T00:00:00Z",
+               last_status: "error",
+               last_error: "timeout",
+               last_response_code: 0
+             }
+           }
+
+    File.rm(path)
+  end
+
+  test "read_json returns decoded maps and tolerates missing or corrupt files" do
+    path =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-json-#{System.unique_integer([:positive])}.json")
+
+    assert Store.read_json(path) == %{}
+
+    Store.write_json(path, %{status: "warning", failed_sources: 2})
+
+    assert Store.read_json(path) == %{"failed_sources" => 2, "status" => "warning"}
+
+    File.write!(path, "not json")
+
+    assert Store.read_json(path) == %{}
+
+    File.rm(path)
+  end
+
   test "normalizes cached items from the previous app name" do
     path =
       Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")

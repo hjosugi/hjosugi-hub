@@ -115,6 +115,71 @@ defmodule HjosugiHub.FetcherTest do
     assert request =~ "if-modified-since: #{String.downcase(last_modified)}"
   end
 
+  test "fetch reports httpd 404 responses as HTTP errors" do
+    base_url = start_httpd(%{})
+
+    feed = %{
+      id: "missing",
+      name: "Missing Feed",
+      url: "#{base_url}/missing.xml",
+      kind: "rss",
+      tags: []
+    }
+
+    assert {:error, "unexpected HTTP status 404", 404} = Fetcher.fetch(feed, 5_000)
+  end
+
+  test "fetch follows httpd redirects and parses the final feed" do
+    body = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Redirected feed item</title>
+          <link>/redirected/1</link>
+          <guid>redirected-1</guid>
+          <description>Arrived after redirect</description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    base_url = start_httpd(%{"redirected/index.xml" => body})
+
+    feed = %{
+      id: "redirected",
+      name: "Redirected Feed",
+      url: "#{base_url}/redirected",
+      kind: "rss",
+      tags: []
+    }
+
+    assert {:ok, [item], 200} = Fetcher.fetch(feed, 5_000)
+    assert item.title == "Redirected feed item"
+    assert item.url == "#{base_url}/redirected/1"
+  end
+
+  test "fetch times out when a server accepts the request but delays the response" do
+    {url, ref} =
+      start_http_server(fn socket ->
+        Process.sleep(250)
+
+        result =
+          :gen_tcp.send(socket, [
+            "HTTP/1.1 200 OK\r\n",
+            "Content-Type: application/rss+xml\r\n",
+            "Content-Length: 0\r\n\r\n"
+          ])
+
+        :gen_tcp.close(socket)
+        {:delayed, result}
+      end)
+
+    feed = %{id: "slow", name: "Slow Feed", url: url, kind: "rss", tags: []}
+
+    assert {:error, "request timed out", 0} = Fetcher.fetch(feed, 50)
+    assert_receive {:http_stub_done, ^ref, {:delayed, _result}}, 1_000
+  end
+
   test "rejects oversized content-length before downloading the body" do
     {url, ref} =
       start_http_server(fn socket ->
@@ -149,6 +214,49 @@ defmodule HjosugiHub.FetcherTest do
 
     assert {:closed, _reason, sent_bytes} = result
     assert sent_bytes < total_bytes
+  end
+
+  defp start_httpd(files) do
+    :ok = ensure_started(:inets)
+
+    root =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-httpd-#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(root)
+
+    Enum.each(files, fn {relative_path, body} ->
+      path = Path.join(root, relative_path)
+      path |> Path.dirname() |> File.mkdir_p!()
+      File.write!(path, body)
+    end)
+
+    {:ok, pid} =
+      :inets.start(:httpd,
+        port: 0,
+        bind_address: {127, 0, 0, 1},
+        server_name: ~c"hjosugi-hub-fetcher-test",
+        server_root: String.to_charlist(root),
+        document_root: String.to_charlist(root),
+        directory_index: [~c"index.xml"],
+        modules: [:mod_alias, :mod_get],
+        mime_types: [{~c"xml", ~c"application/rss+xml"}]
+      )
+
+    port = Keyword.fetch!(:httpd.info(pid), :port)
+
+    on_exit(fn ->
+      :inets.stop(:httpd, pid)
+      File.rm_rf(root)
+    end)
+
+    "http://127.0.0.1:#{port}"
+  end
+
+  defp ensure_started(application) do
+    case Application.ensure_all_started(application) do
+      {:ok, _started} -> :ok
+      {:error, {:already_started, ^application}} -> :ok
+    end
   end
 
   defp start_http_server(responder) do

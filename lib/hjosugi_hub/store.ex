@@ -39,6 +39,16 @@ defmodule HjosugiHub.Store do
     File.write!(path, :erlang.term_to_binary(normalize_feed_state(state)))
   end
 
+  def read_json(path) do
+    with true <- File.exists?(path),
+         {:ok, encoded} <- File.read(path),
+         {:ok, value} <- Elixir.JSON.decode(encoded) do
+      value
+    else
+      _ -> %{}
+    end
+  end
+
   def write_json(path, value) do
     path |> Path.dirname() |> File.mkdir_p!()
     File.write!(path, JSON.encode!(value) <> "\n")
@@ -99,12 +109,19 @@ defmodule HjosugiHub.Store do
   defp normalize_feed_state(_state), do: %{}
 
   defp normalize_feed_metadata(metadata) when is_map(metadata) do
+    metadata = Map.new(metadata, fn {key, value} -> {to_string(key), value} end)
+
     %{}
-    |> put_non_empty(:etag, Map.get(metadata, :etag) || Map.get(metadata, "etag"))
-    |> put_non_empty(
-      :last_modified,
-      Map.get(metadata, :last_modified) || Map.get(metadata, "last_modified")
-    )
+    |> put_non_empty(:etag, Map.get(metadata, "etag"))
+    |> put_non_empty(:last_modified, Map.get(metadata, "last_modified"))
+    |> put_non_empty(:last_checked_at, Map.get(metadata, "last_checked_at"))
+    |> put_non_empty(:last_success_at, Map.get(metadata, "last_success_at"))
+    |> put_non_empty(:first_failure_at, Map.get(metadata, "first_failure_at"))
+    |> put_non_empty(:last_failure_at, Map.get(metadata, "last_failure_at"))
+    |> put_non_empty(:last_status, Map.get(metadata, "last_status"))
+    |> put_non_empty(:last_error, Map.get(metadata, "last_error"))
+    |> put_non_negative_integer(:consecutive_failures, Map.get(metadata, "consecutive_failures"))
+    |> put_integer(:last_response_code, Map.get(metadata, "last_response_code"))
   end
 
   defp normalize_feed_metadata(_metadata), do: %{}
@@ -223,4 +240,29 @@ defmodule HjosugiHub.Store do
   defp put_non_empty(map, _key, nil), do: map
   defp put_non_empty(map, _key, ""), do: map
   defp put_non_empty(map, key, value), do: Map.put(map, key, to_string(value))
+
+  defp put_non_negative_integer(map, key, value) do
+    case parse_integer(value) do
+      integer when is_integer(integer) and integer >= 0 -> Map.put(map, key, integer)
+      _ -> map
+    end
+  end
+
+  defp put_integer(map, key, value) do
+    case parse_integer(value) do
+      integer when is_integer(integer) -> Map.put(map, key, integer)
+      _ -> map
+    end
+  end
+
+  defp parse_integer(value) when is_integer(value), do: value
+
+  defp parse_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} -> integer
+      _ -> nil
+    end
+  end
+
+  defp parse_integer(_value), do: nil
 end

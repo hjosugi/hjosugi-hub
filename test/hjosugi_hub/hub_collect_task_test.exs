@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Hub.CollectTest do
   use ExUnit.Case, async: false
 
+  alias HjosugiHub.Store
   alias Mix.Tasks.Hub.Collect
 
   setup do
@@ -91,6 +92,65 @@ defmodule Mix.Tasks.Hub.CollectTest do
       assert_raise Mix.Error, ~r/--only references unknown feed id\(s\): missing/, fn ->
         Collect.run(["--feeds", feeds_path, "--only", "missing", "--dry-run"])
       end
+    after
+      File.rm_rf(tmp_dir)
+    end
+  end
+
+  test "writes failure report and raises when min-success is not met" do
+    tmp_dir = tmp_dir()
+    feeds_path = Path.join(tmp_dir, "feeds.exs")
+    cache_path = Path.join(tmp_dir, "items.term")
+    json_path = Path.join(tmp_dir, "items.json")
+    report_path = Path.join(tmp_dir, "report.json")
+
+    write_feeds!(feeds_path, [
+      %{
+        id: "down",
+        name: "Down Feed",
+        url: "http://127.0.0.1:1/down.xml",
+        kind: "official",
+        tags: []
+      }
+    ])
+
+    try do
+      assert_raise Mix.Error, ~r/successful_sources=0 is below --min-success=1/, fn ->
+        Collect.run([
+          "--feeds",
+          feeds_path,
+          "--cache",
+          cache_path,
+          "--json",
+          json_path,
+          "--report",
+          report_path,
+          "--timeout",
+          "100",
+          "--workers",
+          "1",
+          "--min-success",
+          "1"
+        ])
+      end
+
+      assert File.exists?(cache_path)
+      assert File.exists?(json_path)
+      assert File.exists?(report_path)
+
+      report = JSON.decode!(File.read!(report_path))
+      assert report["status"] == "critical"
+      assert report["enabled_sources"] == 1
+      assert report["successful_sources"] == 0
+      assert report["failed_sources"] == 1
+      assert [%{"status" => "error", "consecutive_failures" => 1}] = report["sources"]
+
+      feed_state = Store.read_feed_state(Store.feed_state_path(cache_path))
+
+      assert Map.take(feed_state["down"], [:consecutive_failures, :last_status]) == %{
+               consecutive_failures: 1,
+               last_status: "error"
+             }
     after
       File.rm_rf(tmp_dir)
     end

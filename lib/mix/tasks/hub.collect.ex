@@ -19,6 +19,7 @@ defmodule Mix.Tasks.Hub.Collect do
         timeout: :integer,
         workers: :integer,
         max_items: :integer,
+        min_success: :integer,
         only: :string,
         dry_run: :boolean
       )
@@ -31,6 +32,7 @@ defmodule Mix.Tasks.Hub.Collect do
     timeout_ms = Keyword.get(opts, :timeout, CLI.env_int("REQUEST_TIMEOUT_MS", 15_000))
     workers = Keyword.get(opts, :workers, CLI.env_int("FEED_WORKERS", 6))
     max_items = Keyword.get(opts, :max_items, CLI.env_int("MAX_ITEMS", 1000))
+    min_success = Keyword.get(opts, :min_success, CLI.env_int("MIN_SUCCESS", 1))
     dry_run? = Keyword.get(opts, :dry_run, false)
 
     feeds = feeds_path |> Config.feeds() |> filter_feeds(Keyword.get(opts, :only))
@@ -48,12 +50,14 @@ defmodule Mix.Tasks.Hub.Collect do
 
     if dry_run? do
       print_dry_run(result)
+      raise_if_under_min_success(result, min_success)
     else
       Store.write_items(cache_path, result.items)
       Store.write_feed_state(feed_state_path, result.feed_state)
       Store.write_json(json_path, Store.public_items(result.items))
       Store.write_json(report_path, result.report)
       print_summary(result)
+      raise_if_under_min_success(result, min_success)
     end
   end
 
@@ -83,6 +87,20 @@ defmodule Mix.Tasks.Hub.Collect do
       "collected feeds: fresh=#{result.report.fresh_items} failed=#{result.report.failed_sources} total=#{result.report.total_items}"
     )
   end
+
+  defp raise_if_under_min_success(result, min_success)
+       when is_integer(min_success) and min_success > 0 do
+    enabled_sources = Map.get(result.report, :enabled_sources, 0)
+    successful_sources = Map.get(result.report, :successful_sources, 0)
+
+    if enabled_sources > 0 and successful_sources < min_success do
+      Mix.raise(
+        "collection successful_sources=#{successful_sources} is below --min-success=#{min_success}"
+      )
+    end
+  end
+
+  defp raise_if_under_min_success(_result, _min_success), do: :ok
 
   defp print_dry_run(result) do
     Mix.shell().info("dry-run: not writing cache, JSON, or report files")

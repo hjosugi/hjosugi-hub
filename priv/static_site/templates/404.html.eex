@@ -7,8 +7,11 @@
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta name="description" content="Page not found on <%= HTML.escape(@site.handle) %>">
-  <title>404 - <%= HTML.escape(@site.handle) %></title>
+  <meta name="description" content="<%= HTML.escape(@page.description) %>">
+  <%= social_meta_tags(@page) %>
+  <%= feed_discovery_tags(@page) %>
+  <%= canonical_link_tag(@page) %>
+  <title><%= HTML.escape(@page.title) %></title>
   <link rel="icon" href="<%= @root %>static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="<%= @root %>static/app.css?v=<%= @asset_version %>">
   <script defer src="<%= @root %>static/app-static.js?v=<%= @asset_version %>"></script>

@@ -178,8 +178,31 @@ defmodule HjosugiHub.CollectorTest do
     assert cached_status.not_modified == true
     assert cached_status.last_error == nil
 
-    assert result.feed_state["not-modified"] == %{etag: ~s("old")}
-    assert result.feed_state["fresh-with-state"] == %{etag: ~s("new")}
+    assert Map.take(result.feed_state["not-modified"], [
+             :etag,
+             :consecutive_failures,
+             :last_status,
+             :last_response_code
+           ]) == %{
+             etag: ~s("old"),
+             consecutive_failures: 0,
+             last_status: "not_modified",
+             last_response_code: 304
+           }
+
+    assert is_binary(result.feed_state["not-modified"].last_success_at)
+
+    assert Map.take(result.feed_state["fresh-with-state"], [
+             :etag,
+             :consecutive_failures,
+             :last_status,
+             :last_response_code
+           ]) == %{
+             etag: ~s("new"),
+             consecutive_failures: 0,
+             last_status: "ok",
+             last_response_code: 200
+           }
   end
 
   test "retries transient failures inside the feed worker" do
@@ -208,7 +231,13 @@ defmodule HjosugiHub.CollectorTest do
     assert [%Item{id: "retry-1"}] = result.items
     assert Agent.get(attempts, & &1) == 2
     assert [%{retries: 1, last_error: nil}] = result.report.sources
-    assert result.feed_state["retry"] == %{etag: ~s("retry-ok")}
+
+    assert Map.take(result.feed_state["retry"], [:etag, :consecutive_failures, :last_status]) ==
+             %{
+               etag: ~s("retry-ok"),
+               consecutive_failures: 0,
+               last_status: "ok"
+             }
   end
 
   test "does not retry permanent client errors" do
@@ -231,6 +260,94 @@ defmodule HjosugiHub.CollectorTest do
     assert result.items == []
     assert Agent.get(attempts, & &1) == 1
     assert [%{retries: 0, last_error: "not found", response_code: 404}] = result.report.sources
+  end
+
+  test "increments consecutive failures and resets them on success" do
+    feed = %{id: "flaky", name: "Flaky Feed", url: "https://example.com/flaky.xml"}
+
+    failing_fetcher = fn fetched_feed, _timeout_ms, validators ->
+      assert fetched_feed.id == "flaky"
+      assert validators == %{etag: ~s("old")}
+      {:error, "still down", 503}
+    end
+
+    failed =
+      Collector.collect([feed],
+        feed_state: %{
+          "flaky" => %{
+            etag: ~s("old"),
+            consecutive_failures: 2,
+            first_failure_at: "2026-06-18T00:00:00Z",
+            last_success_at: "2026-06-17T00:00:00Z"
+          }
+        },
+        fetcher: failing_fetcher,
+        timeout_ms: 1,
+        workers: 1,
+        max_retries: 0,
+        stale_failure_threshold: 3
+      )
+
+    assert failed.items == []
+    assert failed.report.status == "critical"
+    assert failed.report.failed_sources == 1
+    assert failed.report.stale_sources == 1
+    assert [%{status: "error", consecutive_failures: 3, stale: true}] = failed.report.sources
+
+    assert Map.take(failed.feed_state["flaky"], [
+             :etag,
+             :consecutive_failures,
+             :first_failure_at,
+             :last_success_at,
+             :last_status,
+             :last_error,
+             :last_response_code
+           ]) == %{
+             etag: ~s("old"),
+             consecutive_failures: 3,
+             first_failure_at: "2026-06-18T00:00:00Z",
+             last_success_at: "2026-06-17T00:00:00Z",
+             last_status: "error",
+             last_error: "still down",
+             last_response_code: 503
+           }
+
+    success_fetcher = fn fetched_feed, _timeout_ms, validators ->
+      assert validators == %{etag: ~s("old")}
+      {:ok, [item(fetched_feed, "flaky-ok")], 200, %{etag: ~s("new")}}
+    end
+
+    recovered =
+      Collector.collect([feed],
+        feed_state: failed.feed_state,
+        fetcher: success_fetcher,
+        timeout_ms: 1,
+        workers: 1,
+        max_retries: 0,
+        stale_failure_threshold: 3
+      )
+
+    assert [%Item{id: "flaky-ok"}] = recovered.items
+    assert recovered.report.status == "ok"
+    assert recovered.report.failed_sources == 0
+    assert recovered.report.stale_sources == 0
+    assert [%{status: "ok", consecutive_failures: 0, stale: false}] = recovered.report.sources
+
+    assert Map.take(recovered.feed_state["flaky"], [
+             :etag,
+             :consecutive_failures,
+             :last_status,
+             :last_response_code
+           ]) == %{
+             etag: ~s("new"),
+             consecutive_failures: 0,
+             last_status: "ok",
+             last_response_code: 200
+           }
+
+    refute Map.has_key?(recovered.feed_state["flaky"], :last_error)
+    refute Map.has_key?(recovered.feed_state["flaky"], :first_failure_at)
+    refute Map.has_key?(recovered.feed_state["flaky"], :last_failure_at)
   end
 
   defp item(feed, id) do
