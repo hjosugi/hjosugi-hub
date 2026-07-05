@@ -193,3 +193,40 @@ for (const query of ["サーバー", "にほんご", "foobar"]) {
     await expect(card).toBeVisible();
   });
 }
+
+test("radar results support keyboard navigation, save, and open", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+
+  const input = page.locator("#radar-search");
+  await page.keyboard.press("/");
+  await expect(input).toBeFocused();
+  await input.fill("a");
+  await page.keyboard.press("Enter");
+
+  const cards = page.locator("[data-result-card]");
+  expect(await cards.count()).toBeGreaterThan(1);
+  const first = cards.nth(0);
+  const second = cards.nth(1);
+  const firstUrl = await first.locator("h2 a").getAttribute("href");
+
+  await page.keyboard.press("j");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("j");
+  await expect(second).toBeFocused();
+  await page.keyboard.press("k");
+  await expect(first).toBeFocused();
+
+  await page.keyboard.press("s");
+  await expect(first.locator(".save-btn")).toHaveText(/saved/);
+
+  await page.evaluate(() => {
+    window.__openedByKeyboard = [];
+    window.open = (url) => {
+      window.__openedByKeyboard.push(url);
+      return null;
+    };
+  });
+  await page.keyboard.press("o");
+  await expect.poll(() => page.evaluate(() => window.__openedByKeyboard[0])).toBe(firstUrl);
+});

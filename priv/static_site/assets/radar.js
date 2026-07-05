@@ -20,6 +20,8 @@ import { renderRadar, emptyState } from "./radar-render.js";
   const totalCountNode = app.querySelector("[data-total-count]");
   const suggestNode = document.getElementById("search-suggest");
   const state = createRadarState(app.dataset.category || "all");
+  let activeResultIndex = -1;
+  let focusActiveAfterRender = false;
 
   setupFilterDisclosure(app);
 
@@ -45,10 +47,13 @@ import { renderRadar, emptyState } from "./radar-render.js";
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
     closeSuggest();
+    activeResultIndex = -1;
     navigate(withParam(currentParams(), "q", input.value.trim()));
+    input.blur();
   });
 
   window.addEventListener("popstate", updateFromLocation);
+  document.addEventListener("keydown", handleResultKeys);
 
   function updateFromLocation() {
     const params = currentParams();
@@ -74,9 +79,80 @@ import { renderRadar, emptyState } from "./radar-render.js";
         render(currentParams());
       },
     });
+    syncActiveResult();
   }
 
   const currentParams = () => new URLSearchParams(location.search);
+
+  function resultCards() {
+    return [...nodes.resultsNode.querySelectorAll("[data-result-card]")];
+  }
+
+  function syncActiveResult() {
+    const cards = resultCards();
+    if (cards.length === 0) {
+      activeResultIndex = -1;
+      focusActiveAfterRender = false;
+      return;
+    }
+    if (activeResultIndex >= cards.length) activeResultIndex = cards.length - 1;
+    cards.forEach((card, idx) => {
+      const active = idx === activeResultIndex;
+      card.classList.toggle("keyboard-active", active);
+      card.tabIndex = active ? 0 : -1;
+    });
+    if (focusActiveAfterRender && activeResultIndex >= 0) {
+      cards[activeResultIndex].focus({ preventScroll: true });
+    }
+    focusActiveAfterRender = false;
+  }
+
+  function moveActiveResult(delta) {
+    const cards = resultCards();
+    if (cards.length === 0) return;
+    const fallback = delta > 0 ? 0 : cards.length - 1;
+    const next = activeResultIndex < 0 ? fallback : activeResultIndex + delta;
+    activeResultIndex = Math.max(0, Math.min(cards.length - 1, next));
+    syncActiveResult();
+    const active = cards[activeResultIndex];
+    active.focus({ preventScroll: true });
+    active.scrollIntoView({ block: "nearest" });
+  }
+
+  function activeResultCard() {
+    const cards = resultCards();
+    return activeResultIndex >= 0 ? cards[activeResultIndex] : null;
+  }
+
+  function openActiveResult() {
+    const link = activeResultCard()?.querySelector("h2 a");
+    if (link) window.open(link.href, "_blank", "noopener");
+  }
+
+  function toggleActiveSaved() {
+    const button = activeResultCard()?.querySelector(".save-btn");
+    if (!button) return;
+    focusActiveAfterRender = true;
+    button.click();
+  }
+
+  function handleResultKeys(event) {
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (isInteractiveTarget(event.target)) return;
+    if (event.key === "j") {
+      event.preventDefault();
+      moveActiveResult(1);
+    } else if (event.key === "k") {
+      event.preventDefault();
+      moveActiveResult(-1);
+    } else if ((event.key === "o" || event.key === "Enter") && activeResultIndex >= 0) {
+      event.preventDefault();
+      openActiveResult();
+    } else if (event.key === "s" && activeResultIndex >= 0) {
+      event.preventDefault();
+      toggleActiveSaved();
+    }
+  }
 
   // --- autocomplete ------------------------------------------------------
 
@@ -160,6 +236,12 @@ import { renderRadar, emptyState } from "./radar-render.js";
     input.addEventListener("blur", () => window.setTimeout(closeSuggest, 120));
   }
 })();
+
+function isInteractiveTarget(target) {
+  return Boolean(
+    target?.closest?.("a, button, input, textarea, select, [contenteditable='true'], [contenteditable='']")
+  );
+}
 
 function setupFilterDisclosure(app) {
   // On phones the facet lists are long, so the filter panel is a disclosure that

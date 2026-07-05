@@ -107,7 +107,11 @@ function renderCard(item, actions) {
     item.author ? el("span", { text: "by " + item.author }) : null,
   ]);
 
-  return el("article", { class: "radar-card" }, [meta, title, summary, footer]);
+  return el(
+    "article",
+    { class: "radar-card", tabindex: "-1", "data-result-card": "", "aria-label": item.title || "Untitled" },
+    [meta, title, summary, footer]
+  );
 }
 
 function tagChip(tag, { currentParams, onNavigate }) {
