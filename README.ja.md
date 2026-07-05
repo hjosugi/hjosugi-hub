@@ -3,6 +3,9 @@
 自己紹介ポートフォリオと、技術情報収集・検索ページを1つにしたElixirプロジェクトです。
 公開先はGitHub Pagesを想定しており、常時起動サーバーなしで安く運用できます。
 
+この日本語READMEは概要と運用手順に絞っています。詳細な正本は
+[README.md](README.md)、同期方針は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
 ## すぐ動かす
 
 ```bash
