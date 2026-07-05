@@ -5,6 +5,20 @@ defmodule HjosugiHub.Renderer do
 
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
+  @content_security_policy Enum.join(
+                             [
+                               "default-src 'self'",
+                               "base-uri 'none'",
+                               "object-src 'none'",
+                               "img-src 'self' https://github.com https://avatars.githubusercontent.com",
+                               "script-src 'self'",
+                               "style-src 'self'",
+                               "connect-src 'self'",
+                               "font-src 'self'",
+                               "form-action 'self'"
+                             ],
+                             "; "
+                           )
 
   def export(site, feeds, items, out_dir, base_url \\ "") do
     asset_version = asset_version()
@@ -70,7 +84,8 @@ defmodule HjosugiHub.Renderer do
       generated_text: Calendar.strftime(now, "%Y-%m-%d %H:%M UTC"),
       year: now.year,
       base_url: String.trim_trailing(base_url || "", "/"),
-      asset_version: asset_version
+      asset_version: asset_version,
+      content_security_policy: @content_security_policy
     }
   end
 

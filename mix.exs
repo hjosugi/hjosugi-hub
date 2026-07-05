@@ -5,7 +5,7 @@ defmodule HjosugiHub.MixProject do
     [
       app: :hjosugi_hub,
       version: "0.3.3",
-      elixir: "~> 1.16",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: []
     ]

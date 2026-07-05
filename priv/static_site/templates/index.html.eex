@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="description" content="<%= HTML.escape(@site.headline) %>">
   <title><%= HTML.escape(@site.handle) %> - <%= HTML.escape(@site.headline) %></title>
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">

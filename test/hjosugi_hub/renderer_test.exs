@@ -75,13 +75,30 @@ defmodule HjosugiHub.RendererTest do
       assert File.exists?(Path.join(out_dir, "friends/index.html"))
       refute File.exists?(legacy_data_dir)
 
+      index = File.read!(Path.join(out_dir, "index.html"))
       radar = File.read!(Path.join(out_dir, "radar/index.html"))
       popular = File.read!(Path.join(out_dir, "popular/index.html"))
+      friends = File.read!(Path.join(out_dir, "friends/index.html"))
       items_json = File.read!(Path.join(out_dir, "radar-data/items.json"))
       sitemap = File.read!(Path.join(out_dir, "sitemap.xml"))
+      pages = [index, radar, popular, friends]
 
       assert radar =~ ~s(data-category="all")
       assert popular =~ ~s(data-category="github")
+      assert Enum.all?(pages, &(&1 =~ ~s(<meta http-equiv="Content-Security-Policy")))
+      assert Enum.all?(pages, &(&1 =~ "default-src &#39;self&#39;"))
+
+      assert Enum.all?(
+               pages,
+               &(&1 =~
+                   "img-src &#39;self&#39; https://github.com https://avatars.githubusercontent.com")
+             )
+
+      assert Enum.all?(
+               pages,
+               &(&1 =~ ~s(<meta name="referrer" content="strict-origin-when-cross-origin">))
+             )
+
       assert items_json =~ ~s("weight":1.3)
       assert items_json =~ "An interesting link"
       refute items_json =~ "Disabled source link"

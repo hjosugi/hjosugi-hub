@@ -8,7 +8,7 @@ searchable radar page to `public/`.
 
 ## Quick Start
 
-Requires Elixir 1.16 or newer.
+Requires Elixir 1.18 or newer.
 
 ```bash
 mix test
