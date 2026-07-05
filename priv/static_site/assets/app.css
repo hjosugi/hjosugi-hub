@@ -231,6 +231,12 @@ h1 { font-size: clamp(3rem, 9vw, 7.4rem); margin: 0; max-width: 13ch; }
 .filter-link { display: flex; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--muted); padding: 6px 8px; border-radius: 6px; font-size: 0.82rem; }
 .filter-link:hover, .filter-link.active { color: var(--text); background: var(--panel-2); }
 .filter-link b { font-weight: 500; color: var(--accent); }
+.saved-tools { display: flex; gap: 6px; margin-top: 8px; }
+.filter-action { border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); padding: 5px 8px; font: inherit; font-size: 0.78rem; cursor: pointer; }
+.filter-action:hover { color: var(--text); border-color: var(--accent); }
+.filter-action:disabled { opacity: 0.45; cursor: not-allowed; }
+.import-action { position: relative; overflow: hidden; }
+.saved-file-input { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 /* Filters are a plain sidebar on desktop; the disclosure summary only appears
    on small screens (see the max-width media query), where it collapses. */
 .filter-disclosure { border: 0; }

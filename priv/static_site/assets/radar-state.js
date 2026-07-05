@@ -53,6 +53,28 @@ export function createRadarState(category = "all") {
     persistSaved(saved);
   }
 
+  function exportSaved() {
+    const byKey = new Map(allItems.map((item) => [itemKey(item), item]));
+    return {
+      version: 1,
+      exported_at: new Date().toISOString(),
+      items: [...saved].sort().map((key) => exportSavedItem(key, byKey.get(key))),
+    };
+  }
+
+  function importSaved(payload) {
+    const imported = importSavedItems(payload);
+    let added = 0;
+    for (const entry of imported) {
+      const key = importedKey(entry);
+      if (!key || saved.has(key)) continue;
+      saved.add(key);
+      added += 1;
+    }
+    if (added > 0) persistSaved(saved);
+    return { imported: imported.length, added, savedSize: saved.size };
+  }
+
   function filteredView(params) {
     const query = params.get("q") || "";
     const tag = params.get("tag") || "";
@@ -111,7 +133,32 @@ export function createRadarState(category = "all") {
     suggestions,
     isSaved,
     toggleSaved,
+    exportSaved,
+    importSaved,
   };
+}
+
+function exportSavedItem(key, item) {
+  return {
+    key,
+    id: item?.id || null,
+    url: item?.url || "",
+    title: item?.title || "",
+    source_name: item?.source_name || "",
+    saved_key: key,
+  };
+}
+
+function importSavedItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload?.version === 1 && Array.isArray(payload.items)) return payload.items;
+  return [];
+}
+
+function importedKey(entry) {
+  if (typeof entry === "string") return entry.trim();
+  if (!entry || typeof entry !== "object") return "";
+  return String(entry.key || entry.saved_key || entry.id || entry.url || entry.title || "").trim();
 }
 
 function loadSaved() {

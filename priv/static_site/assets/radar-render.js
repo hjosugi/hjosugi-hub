@@ -18,7 +18,7 @@ export function renderRadar(nodes, view, actions) {
   clearNode.hidden = !(view.query || view.tag || view.source || view.onlySaved);
   clearNode.onclick = onNavigate(new URLSearchParams());
 
-  renderSavedFacet(savedFacetsNode, view.savedCount, view.onlySaved, params, onNavigate);
+  renderSavedFacet(savedFacetsNode, view.savedCount, view.onlySaved, params, onNavigate, actions);
   renderFacets(tagFacetsNode, view.tagFacets, "tag", view.tag, params, onNavigate);
   renderFacets(sourceFacetsNode, view.sourceFacets, "source", view.source, params, onNavigate);
 
@@ -43,11 +43,37 @@ export function emptyState(prefix, message) {
   return el("div", { class: "empty-state" }, [line, el("h2", { text: message })]);
 }
 
-function renderSavedFacet(node, count, active, baseParams, onNavigate) {
+function renderSavedFacet(node, count, active, baseParams, onNavigate, actions) {
   if (!node) return;
+  const exportButton = el("button", {
+    type: "button",
+    class: "filter-action",
+    text: "export",
+    disabled: count === 0,
+    "data-export-saved": "",
+  });
+  exportButton.addEventListener("click", actions.exportSaved);
+
+  const importInput = el("input", {
+    type: "file",
+    accept: "application/json,.json",
+    class: "saved-file-input",
+    "data-import-saved": "",
+    "aria-label": "Import saved items JSON",
+  });
+  importInput.addEventListener("change", () => {
+    const file = importInput.files?.[0];
+    if (file) actions.importSaved(file);
+    importInput.value = "";
+  });
+
   node.replaceChildren(
     facetLink("all", "", "saved", !active, baseParams, 0, onNavigate),
-    facetLink("★ saved", "1", "saved", active, baseParams, count, onNavigate)
+    facetLink("★ saved", "1", "saved", active, baseParams, count, onNavigate),
+    el("div", { class: "saved-tools" }, [
+      exportButton,
+      el("label", { class: "filter-action import-action", text: "import" }, importInput),
+    ])
   );
 }
 

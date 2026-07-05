@@ -78,6 +78,16 @@ import { renderRadar, emptyState } from "./radar-render.js";
         state.toggleSaved(item);
         render(currentParams());
       },
+      exportSaved: () => downloadSaved(state.exportSaved()),
+      importSaved: async (file) => {
+        try {
+          const payload = JSON.parse(await file.text());
+          state.importSaved(payload);
+          render(currentParams());
+        } catch (_) {
+          nodes.summaryNode.textContent = "Could not import saved items from that JSON file.";
+        }
+      },
     });
     syncActiveResult();
   }
@@ -241,6 +251,18 @@ function isInteractiveTarget(target) {
   return Boolean(
     target?.closest?.("a, button, input, textarea, select, [contenteditable='true'], [contenteditable='']")
   );
+}
+
+function downloadSaved(payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "hjosugi-hub-saved.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function setupFilterDisclosure(app) {

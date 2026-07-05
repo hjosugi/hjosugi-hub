@@ -230,3 +230,36 @@ test("radar results support keyboard navigation, save, and open", async ({ page 
   await page.keyboard.press("o");
   await expect.poll(() => page.evaluate(() => window.__openedByKeyboard[0])).toBe(firstUrl);
 });
+
+test("saved items can be exported and imported", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+
+  const card = page.locator("[data-result-card]").first();
+  const title = await card.locator("h2 a").textContent();
+  await card.locator(".save-btn").click();
+  await expect(card.locator(".save-btn")).toHaveText(/saved/);
+
+  await openFilters(page);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("[data-export-saved]").click(),
+  ]);
+  const savedPath = await download.path();
+  expect(savedPath).toBeTruthy();
+
+  await page.evaluate(() => window.localStorage.removeItem("hjosugi-hub-saved"));
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  await expect(page.locator("[data-result-card]", { hasText: title }).locator(".save-btn")).toHaveText(/save/);
+
+  await openFilters(page);
+  await page.locator("[data-import-saved]").setInputFiles(savedPath);
+  await expect(page.locator("[data-result-card]", { hasText: title }).locator(".save-btn")).toHaveText(/saved/);
+});
+
+async function openFilters(page) {
+  await page.locator(".filter-disclosure").evaluate((details) => {
+    details.open = true;
+  });
+}
