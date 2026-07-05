@@ -32,6 +32,5 @@ jobs:
             --no-progress
             --accept 200,204,206,429
             --exclude-path public/radar-data
-            --exclude-mail
             "public/**/*.html"
           fail: true
