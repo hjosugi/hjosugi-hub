@@ -13,7 +13,7 @@ defmodule HjosugiHub.MixProject do
 
   def application do
     [
-      extra_applications: [:crypto, :inets, :logger, :ssl]
+      extra_applications: [:crypto, :inets, :logger, :ssl, :xmerl]
     ]
   end
 end

@@ -58,6 +58,131 @@ defmodule HjosugiHub.FeedParserTest do
     assert item.score == 248
   end
 
+  test "parses RSS items containing nested same-name item tags" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    xml = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Outer item</title>
+          <link>https://example.com/outer</link>
+          <guid>outer-1</guid>
+          <description>
+            Before
+            <item>
+              <title>Inner item</title>
+            </item>
+            after.
+          </description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, [item]} = FeedParser.parse(xml, feed)
+    assert item.title == "Outer item"
+    assert item.url == "https://example.com/outer"
+    assert item.content == "Before Inner item after."
+  end
+
+  test "joins multiple CDATA sections in RSS text" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    xml = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Split CDATA</title>
+          <link>https://example.com/cdata</link>
+          <guid>cdata-1</guid>
+          <description><![CDATA[First ]]><![CDATA[Points: 42]]><![CDATA[ for PostgreSQL]]></description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, [item]} = FeedParser.parse(xml, feed)
+    assert item.content == "First Points: 42 for PostgreSQL"
+    assert item.score == 42
+  end
+
+  test "parses namespaced RSS fields" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    now = ~U[2026-06-20 12:00:00Z]
+
+    xml = """
+    <rss version="2.0"
+         xmlns:content="http://purl.org/rss/1.0/modules/content/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <channel>
+        <item>
+          <title>Namespaced item</title>
+          <link>https://example.com/namespaced</link>
+          <guid>namespaced-1</guid>
+          <description>Short description</description>
+          <content:encoded><![CDATA[Full database content]]></content:encoded>
+          <dc:creator>Grace Hopper</dc:creator>
+          <dc:date>2026-06-20T09:30:00Z</dc:date>
+          <category>Cloud</category>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, [item]} = FeedParser.parse(xml, feed, now)
+    assert item.content == "Full database content"
+    assert item.author == "Grace Hopper"
+    assert item.published_at == ~U[2026-06-20 09:30:00Z]
+    assert "cloud" in item.tags
+  end
+
+  test "parses Atom links with attributes containing greater-than characters" do
+    feed = %{
+      id: "atom",
+      name: "Atom Feed",
+      url: "https://example.com/feed.xml",
+      kind: "atom"
+    }
+
+    xml = """
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <entry>
+        <title>Attribute link</title>
+        <id>tag:example.com,2026:attr</id>
+        <updated>2026-06-20T10:00:00Z</updated>
+        <author>
+          <name>Ada</name>
+        </author>
+        <link rel="alternate" href="/posts?q=1>0"/>
+        <summary>Frontend note</summary>
+        <category term="frontend"/>
+      </entry>
+    </feed>
+    """
+
+    assert {:ok, [item]} = FeedParser.parse(xml, feed)
+    assert item.url == "https://example.com/posts?q=1>0"
+    assert item.author == "Ada"
+    assert "frontend" in item.tags
+  end
+
   test "clamps feed published_at far in the future to collection time" do
     feed = %{
       id: "sample",
@@ -114,5 +239,30 @@ defmodule HjosugiHub.FeedParserTest do
 
     assert {:ok, [item]} = FeedParser.parse(xml, feed, now)
     assert item.published_at == ~U[2026-06-20 10:00:00Z]
+  end
+
+  test "returns an error for unsupported XML" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    assert {:error, ":unsupported_feed"} = FeedParser.parse("<root />", feed)
+  end
+
+  test "returns an error for bad XML" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    assert {:error, message} =
+             FeedParser.parse("<rss><channel><item></channel></rss>", feed)
+
+    assert is_binary(message)
   end
 end

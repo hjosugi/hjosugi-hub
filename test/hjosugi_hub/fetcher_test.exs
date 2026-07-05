@@ -48,6 +48,73 @@ defmodule HjosugiHub.FetcherTest do
     assert bytes == byte_size(body)
   end
 
+  test "fetch/3 stores response validators from a successful response" do
+    body = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Validator item</title>
+          <link>https://example.com/validator</link>
+          <guid>validator-1</guid>
+          <description>Small body</description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    last_modified = "Sat, 20 Jun 2026 10:00:00 GMT"
+
+    {url, ref} =
+      start_http_server(fn socket ->
+        send_response(
+          socket,
+          [
+            {"ETag", ~s("feed-v1")},
+            {"Last-Modified", last_modified},
+            {"Content-Length", byte_size(body)}
+          ],
+          body
+        )
+      end)
+
+    feed = %{id: "validator", name: "Validator Feed", url: url, kind: "rss", tags: []}
+
+    assert {:ok, [_item], 200, metadata} = Fetcher.fetch(feed, 5_000, %{})
+    assert metadata == %{etag: ~s("feed-v1"), last_modified: last_modified}
+    assert_receive {:http_stub_done, ^ref, {:sent, _bytes}}, 1_000
+  end
+
+  test "fetch/3 sends validators and reports not-modified responses" do
+    last_modified = "Sat, 20 Jun 2026 10:00:00 GMT"
+
+    {url, ref} =
+      start_http_server(fn socket, request ->
+        :ok =
+          :gen_tcp.send(socket, [
+            "HTTP/1.1 304 Not Modified\r\n",
+            "ETag: \"feed-v1\"\r\n",
+            "Last-Modified: ",
+            last_modified,
+            "\r\n\r\n"
+          ])
+
+        :gen_tcp.close(socket)
+        {:request, request}
+      end)
+
+    feed = %{id: "cached", name: "Cached Feed", url: url, kind: "rss", tags: []}
+
+    assert {:not_modified, 304, metadata} =
+             Fetcher.fetch(feed, 5_000, %{etag: ~s("feed-v1"), last_modified: last_modified})
+
+    assert metadata == %{etag: ~s("feed-v1"), last_modified: last_modified}
+    assert_receive {:http_stub_done, ^ref, {:request, request}}, 1_000
+
+    request = String.downcase(request)
+    assert request =~ "if-none-match: \"feed-v1\""
+    assert request =~ "if-modified-since: #{String.downcase(last_modified)}"
+  end
+
   test "rejects oversized content-length before downloading the body" do
     {url, ref} =
       start_http_server(fn socket ->
@@ -103,8 +170,8 @@ defmodule HjosugiHub.FetcherTest do
       spawn_link(fn ->
         result =
           with {:ok, socket} <- :gen_tcp.accept(listen_socket),
-               {:ok, _request} <- :gen_tcp.recv(socket, 0, 5_000) do
-            responder.(socket)
+               {:ok, request} <- :gen_tcp.recv(socket, 0, 5_000) do
+            call_responder(responder, socket, request)
           end
 
         send(parent, {:http_stub_done, ref, result})
@@ -117,6 +184,13 @@ defmodule HjosugiHub.FetcherTest do
     end)
 
     {"http://127.0.0.1:#{port}/feed.xml", ref}
+  end
+
+  defp call_responder(responder, socket, request) do
+    case :erlang.fun_info(responder, :arity) do
+      {:arity, 1} -> responder.(socket)
+      {:arity, 2} -> responder.(socket, request)
+    end
   end
 
   defp send_response(socket, headers, body) do

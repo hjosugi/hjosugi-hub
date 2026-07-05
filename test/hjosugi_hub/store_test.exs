@@ -39,6 +39,32 @@ defmodule HjosugiHub.StoreTest do
     File.rm(path)
   end
 
+  test "feed state round-trips validators and ignores corrupt bytes" do
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "hjosugi-hub-feed-state-#{System.unique_integer([:positive])}.term"
+      )
+
+    state = %{
+      "feed-a" => %{etag: ~s("abc"), last_modified: "Sat, 20 Jun 2026 10:00:00 GMT"},
+      feed_b: %{"etag" => ~s("def"), "last_modified" => ""}
+    }
+
+    Store.write_feed_state(path, state)
+
+    assert Store.read_feed_state(path) == %{
+             "feed-a" => %{etag: ~s("abc"), last_modified: "Sat, 20 Jun 2026 10:00:00 GMT"},
+             "feed_b" => %{etag: ~s("def")}
+           }
+
+    File.write!(path, "not an external term")
+
+    assert Store.read_feed_state(path) == %{}
+
+    File.rm(path)
+  end
+
   test "normalizes cached items from the previous app name" do
     path =
       Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")

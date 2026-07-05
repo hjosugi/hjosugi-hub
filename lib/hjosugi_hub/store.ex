@@ -20,6 +20,25 @@ defmodule HjosugiHub.Store do
     File.write!(path, :erlang.term_to_binary(items))
   end
 
+  def feed_state_path(cache_path) do
+    cache_path |> Path.dirname() |> Path.join("feed-state.term")
+  end
+
+  def read_feed_state(path) do
+    with true <- File.exists?(path),
+         {:ok, encoded} <- File.read(path),
+         {:ok, state} <- decode_items(encoded) do
+      normalize_feed_state(state)
+    else
+      _ -> %{}
+    end
+  end
+
+  def write_feed_state(path, state) do
+    path |> Path.dirname() |> File.mkdir_p!()
+    File.write!(path, :erlang.term_to_binary(normalize_feed_state(state)))
+  end
+
   def write_json(path, value) do
     path |> Path.dirname() |> File.mkdir_p!()
     File.write!(path, JSON.encode!(value) <> "\n")
@@ -88,6 +107,25 @@ defmodule HjosugiHub.Store do
   defp normalize_items(items) when is_list(items), do: Enum.map(items, &normalize_item/1)
   defp normalize_items(_items), do: []
 
+  defp normalize_feed_state(state) when is_map(state) do
+    Map.new(state, fn {feed_id, metadata} ->
+      {to_string(feed_id), normalize_feed_metadata(metadata)}
+    end)
+  end
+
+  defp normalize_feed_state(_state), do: %{}
+
+  defp normalize_feed_metadata(metadata) when is_map(metadata) do
+    %{}
+    |> put_non_empty(:etag, Map.get(metadata, :etag) || Map.get(metadata, "etag"))
+    |> put_non_empty(
+      :last_modified,
+      Map.get(metadata, :last_modified) || Map.get(metadata, "last_modified")
+    )
+  end
+
+  defp normalize_feed_metadata(_metadata), do: %{}
+
   defp decode_items(encoded) do
     {:ok, :erlang.binary_to_term(encoded, [:safe])}
   rescue
@@ -128,4 +166,8 @@ defmodule HjosugiHub.Store do
 
   defp empty_to_nil(""), do: nil
   defp empty_to_nil(value), do: value
+
+  defp put_non_empty(map, _key, nil), do: map
+  defp put_non_empty(map, _key, ""), do: map
+  defp put_non_empty(map, key, value), do: Map.put(map, key, to_string(value))
 end

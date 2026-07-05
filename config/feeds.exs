@@ -148,30 +148,6 @@
     tags: ["lobsters", "aggregator"]
   },
   %{
-    id: "cloudflare",
-    name: "The Cloudflare Blog",
-    url: "https://blog.cloudflare.com/rss/",
-    kind: "engineering",
-    enabled: true,
-    tags: ["cloudflare", "networking", "engineering"]
-  },
-  %{
-    id: "netflix-tech",
-    name: "Netflix Tech Blog",
-    url: "https://netflixtechblog.com/feed",
-    kind: "engineering",
-    enabled: true,
-    tags: ["netflix", "engineering", "distributed-systems"]
-  },
-  %{
-    id: "meta-engineering",
-    name: "Engineering at Meta",
-    url: "https://engineering.fb.com/feed/",
-    kind: "engineering",
-    enabled: true,
-    tags: ["meta", "engineering"]
-  },
-  %{
     id: "julia-evans",
     name: "Julia Evans",
     url: "https://jvns.ca/atom.xml",

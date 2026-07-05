@@ -26,6 +26,29 @@ defmodule HjosugiHub.CollectorTest do
 
     def fetch(%{id: "fail"}, _timeout_ms), do: {:error, "boom", 503}
     def fetch(%{id: "exit"}, _timeout_ms), do: exit(:crashed)
+
+    @impl true
+    def fetch(%{id: "not-modified"}, _timeout_ms, validators),
+      do: {:not_modified, 304, validators}
+
+    def fetch(%{id: "fresh-with-state"} = feed, _timeout_ms, _validators) do
+      item = %Item{
+        id: "state-1",
+        source_id: feed.id,
+        source_name: feed.name,
+        source_kind: "rss",
+        title: "Fresh state item",
+        url: "https://example.com/state",
+        summary: "Fresh state summary",
+        published_at: ~U[2026-06-20 12:00:00Z],
+        collected_at: ~U[2026-06-20 12:30:00Z],
+        tags: []
+      }
+
+      {:ok, [item], 200, %{etag: ~s("new")}}
+    end
+
+    def fetch(feed, timeout_ms, _validators), do: fetch(feed, timeout_ms)
   end
 
   @tag capture_log: true
@@ -112,5 +135,50 @@ defmodule HjosugiHub.CollectorTest do
     assert result.report.sources == []
     assert result.report.fresh_items == 0
     assert result.report.failed_sources == 0
+  end
+
+  test "keeps existing items and records state for not-modified feeds" do
+    feeds = [
+      %{id: "not-modified", name: "Not Modified Feed", url: "https://example.com/cached.xml"},
+      %{id: "fresh-with-state", name: "Fresh State Feed", url: "https://example.com/state.xml"}
+    ]
+
+    existing = [
+      %Item{
+        id: "cached-1",
+        source_id: "not-modified",
+        source_name: "Not Modified Feed",
+        source_kind: "rss",
+        title: "Cached item",
+        url: "https://example.com/cached",
+        summary: "Cached summary",
+        published_at: ~U[2026-06-19 12:00:00Z],
+        collected_at: ~U[2026-06-19 12:30:00Z],
+        tags: []
+      }
+    ]
+
+    result =
+      Collector.collect(feeds,
+        existing: existing,
+        feed_state: %{"not-modified" => %{etag: ~s("old")}},
+        fetcher: StubFetcher,
+        timeout_ms: 1,
+        workers: 2,
+        max_items: 10
+      )
+
+    assert Enum.map(result.items, & &1.id) |> Enum.sort() == ["cached-1", "state-1"]
+    assert result.report.fresh_items == 1
+    assert result.report.not_modified_sources == 1
+    assert result.report.failed_sources == 0
+
+    cached_status = Enum.find(result.report.sources, &(&1.source_id == "not-modified"))
+    assert cached_status.response_code == 304
+    assert cached_status.not_modified == true
+    assert cached_status.last_error == nil
+
+    assert result.feed_state["not-modified"] == %{etag: ~s("old")}
+    assert result.feed_state["fresh-with-state"] == %{etag: ~s("new")}
   end
 end
