@@ -2,7 +2,12 @@
 
 export const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
-export const norm = (value) => String(value || "").trim().toLowerCase();
+const foldKatakana = (value) =>
+  value.replace(/[\u30a1-\u30f6]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0x60));
+
+// Character normalization only: no dictionary transliteration between scripts.
+export const norm = (value) =>
+  foldKatakana(String(value || "").normalize("NFKC").trim().toLowerCase()).replace(/\u30fc/g, "");
 export const same = (a, b) => norm(a) === norm(b);
 export const tokens = (value) => norm(value).split(/[^a-z0-9_.+#-]+/).filter(Boolean);
 

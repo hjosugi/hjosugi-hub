@@ -40,5 +40,19 @@
     "score": 92,
     "weight": 1.3,
     "tags": ["lobsters", "aggregator"]
+  },
+  {
+    "id": "fixture-japanese-normalization",
+    "source_id": "japanese-tech",
+    "source_name": "日本語 Tech",
+    "source_kind": "blog",
+    "title": "サーバ運用とＦＯＯＢＡＲ設計",
+    "url": "https://example.com/japanese-normalization",
+    "author": "sample",
+    "summary": "ﾆﾎﾝｺﾞの検索正規化を確認するためのfixture。",
+    "content": "全角英字、半角カナ、長音の表記ゆれを同じ検索インデックスで扱う。",
+    "score": 0,
+    "weight": 1.0,
+    "tags": ["日本語", "search"]
   }
 ]

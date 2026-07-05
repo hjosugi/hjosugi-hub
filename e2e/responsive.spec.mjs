@@ -180,3 +180,16 @@ test("radar search input stays inside the viewport", async ({ page }) => {
   expect(box, "search input has a box").not.toBeNull();
   expect(box.x + box.width, "search input overflows").toBeLessThanOrEqual(clientWidth + 1);
 });
+
+for (const query of ["サーバー", "にほんご", "foobar"]) {
+  test(`radar search normalizes Japanese/fullwidth query ${query}`, async ({ page }) => {
+    await page.goto("/radar/", { waitUntil: "networkidle" });
+    await page.waitForSelector(".radar-card");
+
+    await page.locator("#radar-search").fill(query);
+    await page.locator("#static-search-form").press("Enter");
+
+    const card = page.locator(".radar-card", { hasText: "サーバ運用とＦＯＯＢＡＲ設計" });
+    await expect(card).toBeVisible();
+  });
+}
