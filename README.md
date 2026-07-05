@@ -45,6 +45,9 @@ as CI artifacts by the `e2e` job in [`.github/workflows/ci.yml`](.github/workflo
 - `priv/static_site/templates/`: static HTML templates
 - `priv/static_site/assets/`: CSS and browser-side search JavaScript
 
+See [docs/architecture.md](docs/architecture.md) for the collect -> cache ->
+export data flow, module responsibilities, and public/private data boundary.
+
 ## Deployment
 
 GitHub Pages is the intended production target for Hjosugi Hub: no always-on
