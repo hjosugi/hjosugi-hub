@@ -83,4 +83,7 @@ Important: GitHub Pages cannot hide collected data. Anything in
 
 ## License
 
+0BSD. You can use, copy, modify, and distribute this project for almost any purpose.
+
+
 MIT
