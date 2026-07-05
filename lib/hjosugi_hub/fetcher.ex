@@ -1,5 +1,6 @@
 defmodule HjosugiHub.Fetcher do
   @moduledoc false
+  @behaviour HjosugiHub.Fetcher.Behaviour
 
   alias HjosugiHub.FeedParser
 
@@ -11,7 +12,7 @@ defmodule HjosugiHub.Fetcher do
       _ = Application.ensure_all_started(:inets)
 
       request = {String.to_charlist(feed.url), headers()}
-      http_options = [timeout: timeout_ms, connect_timeout: timeout_ms, autoredirect: true]
+      http_options = http_options(timeout_ms)
       options = [body_format: :binary]
 
       case :httpc.request(:get, request, http_options, options) do
@@ -36,6 +37,27 @@ defmodule HjosugiHub.Fetcher do
         {:error, reason} -> {:error, reason, status}
       end
     end
+  end
+
+  @doc false
+  def http_options(timeout_ms) do
+    [
+      timeout: timeout_ms,
+      connect_timeout: timeout_ms,
+      autoredirect: true,
+      ssl: ssl_options()
+    ]
+  end
+
+  defp ssl_options do
+    # :httpc does not verify server certificates unless TLS verification is configured.
+    [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get(),
+      customize_hostname_check: [
+        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+      ]
+    ]
   end
 
   defp validate_url(url) do

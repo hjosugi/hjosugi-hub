@@ -8,6 +8,7 @@ defmodule HjosugiHub.Collector do
     workers = Keyword.get(opts, :workers, 6)
     max_items = Keyword.get(opts, :max_items, 1000)
     existing = Keyword.get(opts, :existing, [])
+    fetcher = Keyword.get(opts, :fetcher, Fetcher)
     started_at = DateTime.utc_now()
     enabled = Enum.filter(feeds, &Map.get(&1, :enabled, true))
 
@@ -15,13 +16,7 @@ defmodule HjosugiHub.Collector do
     # lightweight process, capped at `workers` at a time. A slow or hung feed is
     # killed on timeout without taking the others down.
     results =
-      enabled
-      |> Task.async_stream(&Fetcher.fetch(&1, timeout_ms),
-        max_concurrency: workers,
-        timeout: timeout_ms + 10_000,
-        on_timeout: :kill_task
-      )
-      |> Enum.to_list()
+      fetch_all(enabled, timeout_ms, workers, fetcher)
       |> then(&Enum.zip(enabled, &1))
       |> Enum.map(fn {feed, result} -> normalize_result(feed, result) end)
 
@@ -49,6 +44,30 @@ defmodule HjosugiHub.Collector do
 
   defp normalize_result(feed, {:ok, result}), do: {feed, result}
   defp normalize_result(feed, {:exit, reason}), do: {feed, {:error, inspect(reason), 0}}
+
+  defp fetch_all(enabled, timeout_ms, workers, fetcher) do
+    previous_trap_exit = Process.flag(:trap_exit, true)
+
+    try do
+      enabled
+      |> Task.async_stream(&fetch_feed(&1, timeout_ms, fetcher),
+        max_concurrency: workers,
+        timeout: timeout_ms + 10_000,
+        on_timeout: :kill_task
+      )
+      |> Enum.to_list()
+    after
+      Process.flag(:trap_exit, previous_trap_exit)
+    end
+  end
+
+  defp fetch_feed(feed, timeout_ms, fetcher) when is_function(fetcher, 2) do
+    fetcher.(feed, timeout_ms)
+  end
+
+  defp fetch_feed(feed, timeout_ms, fetcher) when is_atom(fetcher) do
+    fetcher.fetch(feed, timeout_ms)
+  end
 
   defp source_status({feed, {:ok, items, status}}) do
     %{

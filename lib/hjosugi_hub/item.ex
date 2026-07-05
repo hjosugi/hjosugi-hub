@@ -1,6 +1,22 @@
 defmodule HjosugiHub.Item do
   @moduledoc false
 
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          source_id: String.t() | nil,
+          source_name: String.t() | nil,
+          source_kind: String.t() | nil,
+          title: String.t() | nil,
+          url: String.t() | nil,
+          author: String.t() | nil,
+          summary: String.t() | nil,
+          content: String.t() | nil,
+          published_at: DateTime.t() | nil,
+          collected_at: DateTime.t() | nil,
+          score: non_neg_integer() | nil,
+          tags: [String.t()]
+        }
+
   defstruct [
     :id,
     :source_id,

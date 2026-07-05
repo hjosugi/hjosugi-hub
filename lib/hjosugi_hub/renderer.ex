@@ -45,11 +45,14 @@ defmodule HjosugiHub.Renderer do
   end
 
   defp public_items(items, feeds) do
-    weights = Map.new(feeds, fn feed -> {feed.id, Config.feed_weight(feed)} end)
+    enabled_feeds = Enum.filter(feeds, &Map.get(&1, :enabled, true))
+    enabled_source_ids = MapSet.new(enabled_feeds, & &1.id)
+    weights = Map.new(enabled_feeds, fn feed -> {feed.id, Config.feed_weight(feed)} end)
 
     items
+    |> Enum.filter(&MapSet.member?(enabled_source_ids, &1.source_id))
     |> Store.public_items()
-    |> Enum.map(fn item -> Map.put(item, :weight, Map.get(weights, item.source_id, 1.0)) end)
+    |> Enum.map(fn item -> Map.put(item, :weight, Map.fetch!(weights, item.source_id)) end)
   end
 
   defp build_assigns(site, feeds, public_items, base_url, asset_version) do

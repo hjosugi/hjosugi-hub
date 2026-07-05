@@ -92,12 +92,36 @@ defmodule HjosugiHub.Tagger do
     detected =
       @rules
       |> Enum.filter(fn {_tag, keywords} ->
-        Enum.any?(keywords, &String.contains?(text, String.downcase(&1)))
+        Enum.any?(keywords, &keyword_matches?(text, &1))
       end)
       |> Enum.map(fn {tag, _keywords} -> tag end)
 
     [seed_tags, detected]
     |> Util.merge_tags()
     |> Enum.take(10)
+  end
+
+  defp keyword_matches?(text, keyword) do
+    keyword = String.downcase(keyword)
+
+    if ascii?(keyword) do
+      keyword
+      |> ascii_keyword_pattern()
+      |> Regex.match?(text)
+    else
+      String.contains?(text, keyword)
+    end
+  end
+
+  defp ascii?(string), do: String.match?(string, ~r/\A[\x00-\x7F]+\z/)
+
+  defp ascii_keyword_pattern(keyword) do
+    keyword =
+      keyword
+      |> String.split(~r/\s+/, trim: true)
+      |> Enum.map(&Regex.escape/1)
+      |> Enum.join("\\s+")
+
+    Regex.compile!("(?<![A-Za-z0-9])#{keyword}(?![A-Za-z0-9])", "u")
   end
 end

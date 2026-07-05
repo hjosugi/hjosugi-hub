@@ -3,6 +3,42 @@ defmodule HjosugiHub.StoreTest do
 
   alias HjosugiHub.{Item, Store}
 
+  test "write_items and read_items round-trip a normal cache" do
+    path =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
+
+    item = %Item{
+      id: "round-trip-1",
+      source_id: "source",
+      source_name: "Source",
+      source_kind: "rss",
+      title: "Round trip",
+      url: "https://example.com/round-trip",
+      summary: "summary",
+      content: "content",
+      published_at: ~U[2026-06-20 12:00:00Z],
+      collected_at: ~U[2026-06-20 12:30:00Z],
+      tags: ["cache"]
+    }
+
+    Store.write_items(path, [item])
+
+    assert [%Item{id: "round-trip-1", tags: ["cache"]}] = Store.read_items(path)
+
+    File.rm(path)
+  end
+
+  test "read_items returns an empty list for corrupt cache bytes" do
+    path =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
+
+    File.write!(path, "not an external term")
+
+    assert Store.read_items(path) == []
+
+    File.rm(path)
+  end
+
   test "normalizes cached items from the previous app name" do
     path =
       Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
@@ -90,5 +126,39 @@ defmodule HjosugiHub.StoreTest do
 
     refute Map.has_key?(stale, :score)
     assert [%{id: "stale-1", score: nil}] = Store.public_items([stale])
+  end
+
+  test "normalizes cached future published_at beyond tolerance" do
+    path =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")
+
+    cached = %{
+      __struct__: Item,
+      id: "future-1",
+      source_id: "source",
+      source_name: "Source",
+      source_kind: "rss",
+      title: "future item",
+      url: "https://example.com/future",
+      author: "",
+      summary: "summary",
+      content: "content",
+      published_at: ~U[2026-06-22 00:00:00Z],
+      collected_at: ~U[2026-06-20 12:00:00Z],
+      tags: []
+    }
+
+    File.write!(path, :erlang.term_to_binary([cached]))
+
+    assert [%Item{published_at: ~U[2026-06-20 12:00:00Z]}] = Store.read_items(path)
+
+    File.rm(path)
+  end
+
+  test "keeps cached published_at within tolerance" do
+    collected_at = ~U[2026-06-20 12:00:00Z]
+    published_at = ~U[2026-06-20 17:59:00Z]
+
+    assert Store.clamp_published_at(published_at, collected_at) == published_at
   end
 end

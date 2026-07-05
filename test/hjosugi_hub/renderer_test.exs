@@ -19,7 +19,8 @@ defmodule HjosugiHub.RendererTest do
     }
 
     feeds = [
-      %{id: "hacker-news", name: "Hacker News", kind: "aggregator", enabled: true, tags: []}
+      %{id: "hacker-news", name: "Hacker News", kind: "aggregator", enabled: true, tags: []},
+      %{id: "disabled", name: "Disabled Feed", kind: "official", enabled: false, tags: []}
     ]
 
     items = [
@@ -34,6 +35,30 @@ defmodule HjosugiHub.RendererTest do
         published_at: ~U[2026-06-20 12:00:00Z],
         collected_at: ~U[2026-06-20 13:00:00Z],
         tags: ["elixir"]
+      },
+      %Item{
+        id: "item-disabled",
+        source_id: "disabled",
+        source_name: "Disabled Feed",
+        source_kind: "official",
+        title: "Disabled source link",
+        url: "https://example.com/disabled",
+        summary: "Should not be exported",
+        published_at: ~U[2026-06-20 12:00:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        tags: []
+      },
+      %Item{
+        id: "item-deleted",
+        source_id: "deleted-feed",
+        source_name: "Deleted Feed",
+        source_kind: "official",
+        title: "Deleted source link",
+        url: "https://example.com/deleted",
+        summary: "Should not be exported",
+        published_at: ~U[2026-06-20 12:00:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        tags: []
       }
     ]
 
@@ -58,6 +83,9 @@ defmodule HjosugiHub.RendererTest do
       assert radar =~ ~s(data-category="all")
       assert popular =~ ~s(data-category="github")
       assert items_json =~ ~s("weight":1.3)
+      assert items_json =~ "An interesting link"
+      refute items_json =~ "Disabled source link"
+      refute items_json =~ "Deleted source link"
       assert sitemap =~ "https://example.com/hub/radar/"
       assert sitemap =~ "https://example.com/hub/popular/"
       assert sitemap =~ "https://example.com/hub/friends/"

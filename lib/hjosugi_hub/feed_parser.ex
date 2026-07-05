@@ -1,7 +1,7 @@
 defmodule HjosugiHub.FeedParser do
   @moduledoc false
 
-  alias HjosugiHub.{Item, Tagger, Util}
+  alias HjosugiHub.{Item, Store, Tagger, Util}
 
   def parse(body, feed, now \\ DateTime.utc_now()) do
     xml = to_string(body)
@@ -39,6 +39,8 @@ defmodule HjosugiHub.FeedParser do
       published_at =
         first([element_text(xml, "pubDate"), element_text(xml, "date")]) |> Util.parse_date() ||
           now
+
+      published_at = Store.clamp_published_at(published_at, now)
 
       author =
         first([element_text(xml, "creator"), element_text(xml, "author")]) |> Util.clean_text()
@@ -78,6 +80,8 @@ defmodule HjosugiHub.FeedParser do
       published_at =
         first([element_text(xml, "published"), element_text(xml, "updated")]) |> Util.parse_date() ||
           now
+
+      published_at = Store.clamp_published_at(published_at, now)
 
       author = xml |> element_text("author") |> element_text("name") |> Util.clean_text()
 
