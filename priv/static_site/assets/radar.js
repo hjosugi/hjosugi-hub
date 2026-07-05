@@ -82,6 +82,9 @@ import { renderRadar, emptyState } from "./radar-render.js";
 
   function render(params) {
     if (totalCountNode) totalCountNode.textContent = String(state.totalCount());
+    if (document.activeElement?.matches?.("[data-result-card]")) {
+      focusActiveAfterRender = true;
+    }
     renderRadar(nodes, state.filteredView(params), {
       params,
       onNavigate,
@@ -161,8 +164,8 @@ import { renderRadar, emptyState } from "./radar-render.js";
     activeResultIndex = Math.max(0, Math.min(cards.length - 1, next));
     syncActiveResult();
     const active = cards[activeResultIndex];
-    active.focus({ preventScroll: true });
     active.scrollIntoView({ block: "nearest" });
+    active.focus({ preventScroll: true });
   }
 
   function activeResultCard() {
