@@ -3,29 +3,25 @@ defmodule Mix.Tasks.Hub.Export do
 
   @shortdoc "Export the static GitHub Pages site"
 
-  alias HjosugiHub.{Config, Renderer, Store}
+  alias HjosugiHub.{CLI, Config, Renderer, Store}
 
   @impl true
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _argv, invalid} =
-      OptionParser.parse(args,
-        strict: [
-          site: :string,
-          feeds: :string,
-          cache: :string,
-          data: :string,
-          out: :string,
-          base_url: :string
-        ]
+    opts =
+      CLI.parse_options!(args,
+        site: :string,
+        feeds: :string,
+        cache: :string,
+        data: :string,
+        out: :string,
+        base_url: :string
       )
-
-    if invalid != [], do: Mix.raise("invalid options: #{inspect(invalid)}")
 
     site = Config.site(Keyword.get(opts, :site, "config/site.exs"))
     feeds = Config.feeds(Keyword.get(opts, :feeds, "config/feeds.exs"))
-    cache_path = Keyword.get(opts, :cache, Keyword.get(opts, :data, "radar-cache/items.term"))
+    cache_path = CLI.cache_path(opts, "radar-cache/items.term")
     items = Store.read_items(cache_path)
     out_dir = Keyword.get(opts, :out, "public")
     base_url = Keyword.get(opts, :base_url, System.get_env("PUBLIC_BASE_URL", ""))

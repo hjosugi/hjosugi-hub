@@ -13,18 +13,71 @@ defmodule HjosugiHub.Fetcher do
 
       request = {String.to_charlist(feed.url), headers()}
       http_options = http_options(timeout_ms)
-      options = [body_format: :binary]
+      options = [sync: false, stream: {:self, :once}]
 
       case :httpc.request(:get, request, http_options, options) do
-        {:ok, {{_version, status, _reason}, _headers, body}} when status in 200..299 ->
-          parse_body(body, feed, status)
-
-        {:ok, {{_version, status, _reason}, _headers, _body}} ->
-          {:error, "unexpected HTTP status #{status}", status}
+        {:ok, request_id} ->
+          receive_response(request_id, feed, timeout_ms)
 
         {:error, reason} ->
           {:error, inspect(reason), 0}
       end
+    end
+  end
+
+  defp receive_response(request_id, feed, timeout_ms) do
+    receive do
+      {:http, {^request_id, :stream_start, headers, handler_pid}} ->
+        if content_too_large?(headers) do
+          cancel_request(request_id)
+          {:error, "feed exceeds #{@max_feed_bytes} bytes", 200}
+        else
+          :httpc.stream_next(handler_pid)
+          receive_stream(request_id, handler_pid, feed, timeout_ms, [], 0)
+        end
+
+      {:http, {^request_id, {{_version, status, _reason}, _headers, body}}}
+      when status in 200..299 ->
+        parse_body(IO.iodata_to_binary(body), feed, status)
+
+      {:http, {^request_id, {{_version, status, _reason}, _headers, _body}}} ->
+        {:error, "unexpected HTTP status #{status}", status}
+
+      {:http, {^request_id, {:error, reason}}} ->
+        {:error, inspect(reason), 0}
+    after
+      timeout_ms ->
+        cancel_request(request_id)
+        {:error, "request timed out", 0}
+    end
+  end
+
+  defp receive_stream(request_id, handler_pid, feed, timeout_ms, chunks, size) do
+    receive do
+      {:http, {^request_id, :stream, chunk}} ->
+        chunk = IO.iodata_to_binary(chunk)
+        new_size = size + byte_size(chunk)
+
+        if new_size > @max_feed_bytes do
+          cancel_request(request_id)
+          {:error, "feed exceeds #{@max_feed_bytes} bytes", 200}
+        else
+          :httpc.stream_next(handler_pid)
+          receive_stream(request_id, handler_pid, feed, timeout_ms, [chunk | chunks], new_size)
+        end
+
+      {:http, {^request_id, :stream_end, _headers}} ->
+        chunks
+        |> Enum.reverse()
+        |> IO.iodata_to_binary()
+        |> parse_body(feed, 200)
+
+      {:http, {^request_id, {:error, reason}}} ->
+        {:error, inspect(reason), 0}
+    after
+      timeout_ms ->
+        cancel_request(request_id)
+        {:error, "request timed out", 0}
     end
   end
 
@@ -37,6 +90,37 @@ defmodule HjosugiHub.Fetcher do
         {:error, reason} -> {:error, reason, status}
       end
     end
+  end
+
+  defp content_too_large?(headers) do
+    case content_length(headers) do
+      bytes when is_integer(bytes) -> bytes > @max_feed_bytes
+      nil -> false
+    end
+  end
+
+  defp content_length(headers) do
+    Enum.find_value(headers, fn
+      {name, value} ->
+        if name |> to_string() |> String.downcase() == "content-length" do
+          parse_content_length(value)
+        end
+
+      _other ->
+        nil
+    end)
+  end
+
+  defp parse_content_length(value) do
+    case value |> to_string() |> String.trim() |> Integer.parse() do
+      {bytes, ""} when bytes >= 0 -> bytes
+      _ -> nil
+    end
+  end
+
+  defp cancel_request(request_id) do
+    _ = :httpc.cancel_request(request_id)
+    :ok
   end
 
   @doc false

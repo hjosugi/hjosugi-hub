@@ -1,9 +1,19 @@
 defmodule HjosugiHub.Renderer do
   @moduledoc false
 
+  require EEx
+
   alias HjosugiHub.{Config, Kofun, Store}
 
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
+  @index_template Path.join(@template_dir, "index.html.eex")
+  @radar_template Path.join(@template_dir, "radar.html.eex")
+  @gallery_template Path.join(@template_dir, "gallery.html.eex")
+
+  @external_resource @index_template
+  @external_resource @radar_template
+  @external_resource @gallery_template
+
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
   @content_security_policy Enum.join(
                              [
@@ -20,18 +30,22 @@ defmodule HjosugiHub.Renderer do
                              "; "
                            )
 
+  EEx.function_from_file(:defp, :index_template, @index_template, [:assigns], [])
+  EEx.function_from_file(:defp, :radar_template, @radar_template, [:assigns], [])
+  EEx.function_from_file(:defp, :gallery_template, @gallery_template, [:assigns], [])
+
   def export(site, feeds, items, out_dir, base_url \\ "") do
     asset_version = asset_version()
     public_items = public_items(items, feeds)
     assigns = build_assigns(site, feeds, public_items, base_url, asset_version)
 
-    write_rendered(out_dir, "index.html", "index.html.eex", assigns)
+    write_rendered(out_dir, "index.html", :index, assigns)
     write_radar_pages(out_dir, assigns)
 
     write_rendered(
       Path.join(out_dir, "friends"),
       "index.html",
-      "gallery.html.eex",
+      :gallery,
       Map.put(assigns, :root, "../")
     )
 
@@ -100,15 +114,19 @@ defmodule HjosugiHub.Renderer do
   defp write_radar_pages(out_dir, assigns) do
     Enum.each(@radar_pages, fn {path, category, root} ->
       scoped = Map.merge(assigns, %{category: category, root: root})
-      write_rendered(Path.join(out_dir, path), "index.html", "radar.html.eex", scoped)
+      write_rendered(Path.join(out_dir, path), "index.html", :radar, scoped)
     end)
   end
 
   defp write_rendered(dir, file, template, assigns) do
     File.mkdir_p!(dir)
-    html = EEx.eval_file(Path.join(@template_dir, template), assigns: assigns)
+    html = render_template(template, assigns)
     File.write!(Path.join(dir, file), html)
   end
+
+  defp render_template(:index, assigns), do: index_template(assigns)
+  defp render_template(:radar, assigns), do: radar_template(assigns)
+  defp render_template(:gallery, assigns), do: gallery_template(assigns)
 
   defp copy_assets(out_dir, version) do
     target = Path.join(out_dir, "static")

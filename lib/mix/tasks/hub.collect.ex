@@ -3,35 +3,31 @@ defmodule Mix.Tasks.Hub.Collect do
 
   @shortdoc "Collect RSS/Atom feeds into radar-cache/"
 
-  alias HjosugiHub.{Collector, Config, Store}
+  alias HjosugiHub.{CLI, Collector, Config, Store}
 
   @impl true
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _argv, invalid} =
-      OptionParser.parse(args,
-        strict: [
-          feeds: :string,
-          cache: :string,
-          data: :string,
-          json: :string,
-          report: :string,
-          timeout: :integer,
-          workers: :integer,
-          max_items: :integer
-        ]
+    opts =
+      CLI.parse_options!(args,
+        feeds: :string,
+        cache: :string,
+        data: :string,
+        json: :string,
+        report: :string,
+        timeout: :integer,
+        workers: :integer,
+        max_items: :integer
       )
 
-    if invalid != [], do: Mix.raise("invalid options: #{inspect(invalid)}")
-
     feeds_path = Keyword.get(opts, :feeds, "config/feeds.exs")
-    cache_path = Keyword.get(opts, :cache, Keyword.get(opts, :data, "radar-cache/items.term"))
+    cache_path = CLI.cache_path(opts, "radar-cache/items.term")
     json_path = Keyword.get(opts, :json, "radar-cache/items.json")
     report_path = Keyword.get(opts, :report, "radar-cache/collection-report.json")
-    timeout_ms = Keyword.get(opts, :timeout, env_int("REQUEST_TIMEOUT_MS", 15_000))
-    workers = Keyword.get(opts, :workers, env_int("FEED_WORKERS", 6))
-    max_items = Keyword.get(opts, :max_items, env_int("MAX_ITEMS", 1000))
+    timeout_ms = Keyword.get(opts, :timeout, CLI.env_int("REQUEST_TIMEOUT_MS", 15_000))
+    workers = Keyword.get(opts, :workers, CLI.env_int("FEED_WORKERS", 6))
+    max_items = Keyword.get(opts, :max_items, CLI.env_int("MAX_ITEMS", 1000))
 
     feeds = Config.feeds(feeds_path)
     existing = Store.read_items(cache_path)
@@ -51,14 +47,5 @@ defmodule Mix.Tasks.Hub.Collect do
     Mix.shell().info(
       "collected feeds: fresh=#{result.report.fresh_items} failed=#{result.report.failed_sources} total=#{result.report.total_items}"
     )
-  end
-
-  defp env_int(name, default) do
-    case System.get_env(name) do
-      nil -> default
-      value -> String.to_integer(value)
-    end
-  rescue
-    _ -> default
   end
 end
