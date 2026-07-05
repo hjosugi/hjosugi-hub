@@ -181,4 +181,70 @@ defmodule HjosugiHub.CollectorTest do
     assert result.feed_state["not-modified"] == %{etag: ~s("old")}
     assert result.feed_state["fresh-with-state"] == %{etag: ~s("new")}
   end
+
+  test "retries transient failures inside the feed worker" do
+    {:ok, attempts} = Agent.start_link(fn -> 0 end)
+
+    fetcher = fn feed, _timeout_ms, _metadata ->
+      attempt = Agent.get_and_update(attempts, &{&1 + 1, &1 + 1})
+
+      if attempt == 1 do
+        {:error, "temporary unavailable", 503}
+      else
+        {:ok, [item(feed, "retry-1")], 200, %{etag: ~s("retry-ok")}}
+      end
+    end
+
+    result =
+      Collector.collect(
+        [%{id: "retry", name: "Retry Feed", url: "https://example.com/retry.xml"}],
+        fetcher: fetcher,
+        timeout_ms: 1,
+        workers: 1,
+        max_retries: 2,
+        retry_backoff_ms: 0
+      )
+
+    assert [%Item{id: "retry-1"}] = result.items
+    assert Agent.get(attempts, & &1) == 2
+    assert [%{retries: 1, last_error: nil}] = result.report.sources
+    assert result.feed_state["retry"] == %{etag: ~s("retry-ok")}
+  end
+
+  test "does not retry permanent client errors" do
+    {:ok, attempts} = Agent.start_link(fn -> 0 end)
+
+    fetcher = fn _feed, _timeout_ms, _metadata ->
+      Agent.update(attempts, &(&1 + 1))
+      {:error, "not found", 404}
+    end
+
+    result =
+      Collector.collect([%{id: "gone", name: "Gone Feed", url: "https://example.com/gone.xml"}],
+        fetcher: fetcher,
+        timeout_ms: 1,
+        workers: 1,
+        max_retries: 2,
+        retry_backoff_ms: 0
+      )
+
+    assert result.items == []
+    assert Agent.get(attempts, & &1) == 1
+    assert [%{retries: 0, last_error: "not found", response_code: 404}] = result.report.sources
+  end
+
+  defp item(feed, id) do
+    %Item{
+      id: id,
+      source_id: feed.id,
+      source_name: feed.name,
+      source_kind: "rss",
+      title: "Retried item",
+      url: "https://example.com/retried",
+      summary: "Retried summary",
+      published_at: ~U[2026-06-20 12:00:00Z],
+      collected_at: ~U[2026-06-20 12:30:00Z],
+      tags: []
+    }
+  end
 end

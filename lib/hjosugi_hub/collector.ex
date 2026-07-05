@@ -10,6 +10,8 @@ defmodule HjosugiHub.Collector do
     existing = Keyword.get(opts, :existing, [])
     feed_state = Keyword.get(opts, :feed_state, %{})
     fetcher = Keyword.get(opts, :fetcher, Fetcher)
+    max_retries = Keyword.get(opts, :max_retries, 1)
+    retry_backoff_ms = Keyword.get(opts, :retry_backoff_ms, 500)
     started_at = DateTime.utc_now()
     enabled = Enum.filter(feeds, &Map.get(&1, :enabled, true))
 
@@ -17,15 +19,15 @@ defmodule HjosugiHub.Collector do
     # lightweight process, capped at `workers` at a time. A slow or hung feed is
     # killed on timeout without taking the others down.
     results =
-      fetch_all(enabled, timeout_ms, workers, fetcher, feed_state)
+      fetch_all(enabled, timeout_ms, workers, fetcher, feed_state, max_retries, retry_backoff_ms)
       |> then(&Enum.zip(enabled, &1))
       |> Enum.map(fn {feed, result} -> normalize_result(feed, result) end)
 
     fresh_items =
       results
       |> Enum.flat_map(fn
-        {_feed, {:ok, items, _status, _metadata}} -> items
-        {_feed, _error} -> []
+        {_feed, {:ok, items, _status, _metadata}, _retries} -> items
+        {_feed, _result, _retries} -> []
       end)
 
     items = Store.merge_items(existing, fresh_items, max_items)
@@ -38,26 +40,31 @@ defmodule HjosugiHub.Collector do
       fresh_items: length(fresh_items),
       total_items: length(items),
       not_modified_sources:
-        Enum.count(results, fn {_feed, result} ->
+        Enum.count(results, fn {_feed, result, _retries} ->
           match?({:not_modified, _status, _metadata}, result)
         end),
       failed_sources:
-        Enum.count(results, fn {_feed, result} -> match?({:error, _reason, _status}, result) end)
+        Enum.count(results, fn {_feed, result, _retries} ->
+          match?({:error, _reason, _status}, result)
+        end)
     }
 
     %{items: items, fresh_items: fresh_items, feed_state: next_feed_state, report: report}
   end
 
-  defp normalize_result(feed, {:ok, {:ok, items, status}}), do: {feed, {:ok, items, status, %{}}}
-  defp normalize_result(feed, {:ok, result}), do: {feed, result}
-  defp normalize_result(feed, {:exit, reason}), do: {feed, {:error, inspect(reason), 0}}
+  defp normalize_result(feed, {:ok, {{:ok, items, status}, retries}}),
+    do: {feed, {:ok, items, status, %{}}, retries}
 
-  defp fetch_all(enabled, timeout_ms, workers, fetcher, feed_state) do
+  defp normalize_result(feed, {:ok, {result, retries}}), do: {feed, result, retries}
+  defp normalize_result(feed, {:exit, reason}), do: {feed, {:error, inspect(reason), 0}, 0}
+
+  defp fetch_all(enabled, timeout_ms, workers, fetcher, feed_state, max_retries, retry_backoff_ms) do
     previous_trap_exit = Process.flag(:trap_exit, true)
 
     try do
       enabled
-      |> Task.async_stream(&fetch_feed(&1, timeout_ms, fetcher, feed_state),
+      |> Task.async_stream(
+        &fetch_with_retries(&1, timeout_ms, fetcher, feed_state, max_retries, retry_backoff_ms),
         max_concurrency: workers,
         timeout: timeout_ms + 10_000,
         on_timeout: :kill_task
@@ -65,6 +72,40 @@ defmodule HjosugiHub.Collector do
       |> Enum.to_list()
     after
       Process.flag(:trap_exit, previous_trap_exit)
+    end
+  end
+
+  defp fetch_with_retries(feed, timeout_ms, fetcher, feed_state, max_retries, retry_backoff_ms) do
+    do_fetch_with_retries(feed, timeout_ms, fetcher, feed_state, max_retries, retry_backoff_ms, 0)
+  end
+
+  defp do_fetch_with_retries(
+         feed,
+         timeout_ms,
+         fetcher,
+         feed_state,
+         max_retries,
+         retry_backoff_ms,
+         retries
+       ) do
+    result = fetch_feed(feed, timeout_ms, fetcher, feed_state)
+
+    if retryable?(result) and retries < max_retries do
+      if retry_backoff_ms > 0 do
+        Process.sleep(retry_backoff_ms * (retries + 1))
+      end
+
+      do_fetch_with_retries(
+        feed,
+        timeout_ms,
+        fetcher,
+        feed_state,
+        max_retries,
+        retry_backoff_ms,
+        retries + 1
+      )
+    else
+      {result, retries}
     end
   end
 
@@ -84,48 +125,51 @@ defmodule HjosugiHub.Collector do
     end
   end
 
-  defp source_status({feed, {:ok, items, status, _metadata}}) do
+  defp source_status({feed, {:ok, items, status, _metadata}, retries}) do
     %{
       source_id: feed.id,
       source_name: feed.name,
       response_code: status,
       items_seen: length(items),
       not_modified: false,
+      retries: retries,
       last_error: nil
     }
   end
 
-  defp source_status({feed, {:not_modified, status, _metadata}}) do
+  defp source_status({feed, {:not_modified, status, _metadata}, retries}) do
     %{
       source_id: feed.id,
       source_name: feed.name,
       response_code: status,
       items_seen: 0,
       not_modified: true,
+      retries: retries,
       last_error: nil
     }
   end
 
-  defp source_status({feed, {:error, reason, status}}) do
+  defp source_status({feed, {:error, reason, status}, retries}) do
     %{
       source_id: feed.id,
       source_name: feed.name,
       response_code: status,
       items_seen: 0,
       not_modified: false,
+      retries: retries,
       last_error: reason
     }
   end
 
   defp merge_feed_state(feed_state, results) do
     Enum.reduce(results, normalize_feed_state(feed_state), fn
-      {feed, {:ok, _items, _status, metadata}}, acc ->
+      {feed, {:ok, _items, _status, metadata}, _retries}, acc ->
         put_feed_metadata(acc, feed, metadata)
 
-      {feed, {:not_modified, _status, metadata}}, acc ->
+      {feed, {:not_modified, _status, metadata}, _retries}, acc ->
         put_feed_metadata(acc, feed, metadata)
 
-      {_feed, _result}, acc ->
+      {_feed, _result, _retries}, acc ->
         acc
     end)
   end
@@ -144,4 +188,7 @@ defmodule HjosugiHub.Collector do
   defp normalize_feed_state(feed_state) do
     Map.new(feed_state, fn {feed_id, metadata} -> {to_string(feed_id), metadata} end)
   end
+
+  defp retryable?({:error, _reason, status}), do: status == 0 or status in 500..599
+  defp retryable?(_result), do: false
 end

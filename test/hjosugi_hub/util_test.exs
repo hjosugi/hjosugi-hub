@@ -30,4 +30,19 @@ defmodule HjosugiHub.UtilTest do
   test "builds stable ids" do
     assert byte_size(Util.stable_id("source", "raw")) == 32
   end
+
+  test "normalizes urls for grouping" do
+    assert Util.normalize_url(
+             "HTTP://www.Example.com/post/?b=2&utm_source=newsletter&a=1#comments"
+           ) == "https://example.com/post?a=1&b=2"
+
+    assert Util.normalize_url("http://example.com:80/post/") == "https://example.com/post"
+    assert Util.normalize_url("https://www.example.com/") == "https://example.com"
+  end
+
+  test "keeps and sorts meaningful query params while removing tracking params" do
+    assert Util.normalize_url(
+             "https://example.com/search?utm_medium=social&sort=new&q=elixir&fbclid=abc"
+           ) == "https://example.com/search?q=elixir&sort=new"
+  end
 end

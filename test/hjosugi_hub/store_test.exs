@@ -154,6 +154,65 @@ defmodule HjosugiHub.StoreTest do
     assert [%{id: "stale-1", score: nil}] = Store.public_items([stale])
   end
 
+  test "public_items/1 groups normalized urls across sources and merges tags" do
+    items = [
+      %Item{
+        id: "origin-1",
+        source_id: "origin",
+        source_name: "Origin Blog",
+        source_kind: "official",
+        title: "Original post",
+        url: "HTTP://www.Example.com/posts/elixir/?b=2&utm_source=feed&a=1#comments",
+        summary: "Origin summary",
+        published_at: ~U[2026-06-20 12:00:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        tags: ["official", "elixir"]
+      },
+      %Item{
+        id: "hn-1",
+        source_id: "hacker-news",
+        source_name: "Hacker News",
+        source_kind: "aggregator",
+        title: "HN discussion",
+        url: "https://example.com/posts/elixir?a=1&b=2&utm_medium=social",
+        summary: "HN summary",
+        published_at: ~U[2026-06-20 12:30:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        score: 42,
+        tags: ["aggregator", "elixir"]
+      },
+      %Item{
+        id: "different-query",
+        source_id: "newsletter",
+        source_name: "Newsletter",
+        source_kind: "newsletter",
+        title: "Different query",
+        url: "https://example.com/posts/elixir?a=1&b=3",
+        summary: "Different summary",
+        published_at: ~U[2026-06-20 12:45:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        tags: ["newsletter"]
+      }
+    ]
+
+    public_items = Store.public_items(items)
+
+    assert length(public_items) == 2
+
+    grouped =
+      Enum.find(public_items, &(&1.normalized_url == "https://example.com/posts/elixir?a=1&b=2"))
+
+    assert grouped.id == "origin-1"
+    assert grouped.tags == ["aggregator", "elixir", "official"]
+    assert Enum.map(grouped.sources, & &1.source_id) == ["origin", "hacker-news"]
+    assert Enum.find(grouped.sources, &(&1.source_id == "hacker-news")).score == 42
+
+    assert Enum.any?(
+             public_items,
+             &(&1.normalized_url == "https://example.com/posts/elixir?a=1&b=3")
+           )
+  end
+
   test "normalizes cached future published_at beyond tolerance" do
     path =
       Path.join(System.tmp_dir!(), "hjosugi-hub-store-#{System.unique_integer([:positive])}.term")

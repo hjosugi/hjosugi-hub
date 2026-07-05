@@ -58,6 +58,89 @@ defmodule HjosugiHub.FeedParserTest do
     assert item.score == 248
   end
 
+  test "captures count-before-label aggregator metadata" do
+    feed = %{
+      id: "aggregator",
+      name: "Aggregator",
+      url: "https://example.com/feed.xml",
+      kind: "aggregator"
+    }
+
+    xml = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Point-forward post</title>
+          <link>https://example.com/points</link>
+          <guid>agg-1</guid>
+          <description><![CDATA[
+            <p><a href="https://example.com/points">123 points</a>
+            by ada | <a href="https://example.com/comments">42 comments</a></p>
+          ]]></description>
+        </item>
+        <item>
+          <title>Comment-only post</title>
+          <link>https://example.com/comments-only</link>
+          <guid>agg-2</guid>
+          <description><![CDATA[
+            <p><a href="https://example.com/comments-only">42 comments</a></p>
+          ]]></description>
+        </item>
+        <item>
+          <title>Unknown metadata post</title>
+          <link>https://example.com/unknown</link>
+          <guid>agg-3</guid>
+          <description><![CDATA[<p>Discussion active; score not available.</p>]]></description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, [points_item, comments_item, unknown_item]} = FeedParser.parse(xml, feed)
+    assert points_item.score == 123
+    assert comments_item.score == 42
+    assert unknown_item.score == nil
+  end
+
+  test "captures Lobsters-style escaped metadata descriptions" do
+    feed = %{
+      id: "lobsters",
+      name: "Lobsters",
+      url: "https://lobste.rs/rss",
+      kind: "aggregator"
+    }
+
+    xml = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Returning to Zig</title>
+          <link>https://example.com/return-to-zig</link>
+          <guid>https://lobste.rs/s/svm2dp</guid>
+          <comments>https://lobste.rs/s/svm2dp/returning_zig</comments>
+          <description>
+            &lt;p&gt;&lt;a href=&quot;https://lobste.rs/s/svm2dp/returning_zig&quot;&gt;5 comments&lt;/a&gt;
+            | 15 points&lt;/p&gt;
+          </description>
+        </item>
+        <item>
+          <title>Current comment link shape</title>
+          <link>https://example.com/current-lobsters</link>
+          <guid>https://lobste.rs/s/current</guid>
+          <comments>https://lobste.rs/s/current/current_comment_link_shape</comments>
+          <description>
+            &lt;p&gt;&lt;a href=&quot;https://lobste.rs/s/current/current_comment_link_shape&quot;&gt;Comments&lt;/a&gt;&lt;/p&gt;
+          </description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, [scored_item, unknown_item]} = FeedParser.parse(xml, feed)
+    assert scored_item.score == 15
+    assert unknown_item.score == nil
+  end
+
   test "parses RSS items containing nested same-name item tags" do
     feed = %{
       id: "sample",

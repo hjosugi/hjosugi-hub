@@ -46,6 +46,8 @@
       <span>static</span>
       <span>/</span>
       <span><%= @enabled_feeds %> feeds</span>
+      <span>/</span>
+      <a href="<%= @root %>feeds.opml">feeds.opml</a>
     </div>
   </section>
 

@@ -58,26 +58,9 @@ defmodule HjosugiHub.Store do
   end
 
   def public_items(items) do
-    Enum.map(items, fn %Item{} = item ->
-      %{
-        id: item.id,
-        source_id: item.source_id,
-        source_name: item.source_name,
-        source_kind: item.source_kind,
-        title: item.title,
-        url: item.url,
-        author: empty_to_nil(item.author),
-        summary: item.summary,
-        content: empty_to_nil(item.content),
-        published_at: item.published_at,
-        collected_at: item.collected_at,
-        # Map.get, not item.score: hub.collect calls public_items/1 directly on
-        # freshly merged items, which can include a struct deserialized from the
-        # cache before :score existed. Dot access would raise KeyError there.
-        score: Map.get(item, :score),
-        tags: item.tags
-      }
-    end)
+    items
+    |> Enum.map(fn %Item{} = item -> public_item(item) end)
+    |> group_public_items()
   end
 
   def sort_items(items) do
@@ -156,6 +139,76 @@ defmodule HjosugiHub.Store do
 
   defp merge_item(current, incoming) do
     %{incoming | collected_at: current.collected_at || incoming.collected_at}
+  end
+
+  defp public_item(%Item{} = item) do
+    %{
+      id: Map.get(item, :id),
+      source_id: Map.get(item, :source_id),
+      source_name: Map.get(item, :source_name),
+      source_kind: Map.get(item, :source_kind),
+      title: Map.get(item, :title),
+      url: Map.get(item, :url),
+      author: empty_to_nil(Map.get(item, :author)),
+      summary: Map.get(item, :summary),
+      content: empty_to_nil(Map.get(item, :content)),
+      published_at: Map.get(item, :published_at),
+      collected_at: Map.get(item, :collected_at),
+      # Map.get, not item.score: hub.collect calls public_items/1 directly on
+      # freshly merged items, which can include a struct deserialized from the
+      # cache before :score existed. Dot access would raise KeyError there.
+      score: Map.get(item, :score),
+      tags: Map.get(item, :tags, [])
+    }
+    |> put_non_empty(:normalized_url, Util.normalize_url(Map.get(item, :url)))
+  end
+
+  defp group_public_items(items) do
+    items
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {item, index}, groups ->
+      key = public_item_group_key(item, index)
+
+      Map.update(groups, key, %{index: index, items: [item]}, fn group ->
+        %{group | items: [item | group.items]}
+      end)
+    end)
+    |> Map.values()
+    |> Enum.sort_by(& &1.index)
+    |> Enum.map(fn group ->
+      group.items
+      |> Enum.reverse()
+      |> merge_public_item_group()
+    end)
+  end
+
+  defp public_item_group_key(%{normalized_url: normalized_url}, _index)
+       when is_binary(normalized_url) and normalized_url != "" do
+    {:url, normalized_url}
+  end
+
+  defp public_item_group_key(_item, index), do: {:ungrouped, index}
+
+  defp merge_public_item_group([item]) do
+    Map.put(item, :sources, [public_item_source(item)])
+  end
+
+  defp merge_public_item_group([representative | _rest] = items) do
+    representative
+    |> Map.put(:tags, Util.merge_tags(Enum.map(items, &Map.get(&1, :tags, []))))
+    |> Map.put(:sources, Enum.map(items, &public_item_source/1))
+  end
+
+  defp public_item_source(item) do
+    %{
+      item_id: Map.get(item, :id),
+      source_id: Map.get(item, :source_id),
+      source_name: Map.get(item, :source_name),
+      source_kind: Map.get(item, :source_kind),
+      title: Map.get(item, :title),
+      url: Map.get(item, :url),
+      score: Map.get(item, :score)
+    }
   end
 
   # Re-clean cached text so items stored before a clean_text fix (e.g. raw

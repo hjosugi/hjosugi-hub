@@ -1,0 +1,48 @@
+<% alias HjosugiHub.HTML %>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="Page not found on <%= HTML.escape(@site.handle) %>">
+  <title>404 - <%= HTML.escape(@site.handle) %></title>
+  <link rel="icon" href="<%= @root %>static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="<%= @root %>static/app.css?v=<%= @asset_version %>">
+  <script defer src="<%= @root %>static/app-static.js?v=<%= @asset_version %>"></script>
+  <script type="module" src="<%= @root %>static/pet.js?v=<%= @asset_version %>"></script>
+</head>
+<body class="crt">
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="<%= @root %>" aria-label="Home"><span class="prompt">~/</span><%= HTML.escape(@site.handle) %></a>
+    <nav aria-label="Primary navigation">
+      <a class="nav-link" href="<%= @root %>radar/">radar/</a>
+      <a class="nav-link" href="<%= @root %>popular/">popular/</a>
+      <a class="nav-link" href="<%= @root %>friends/">friends/</a>
+      <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
+    </nav>
+    <button class="ghost-button" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
+  </div>
+</header>
+<main class="shell hero">
+  <p class="terminal-line"><span class="prompt">$</span> cat /requested/path</p>
+  <h1>404</h1>
+  <p class="headline">No such file or directory.</p>
+  <p class="lede">This static page was not found. The portfolio and radar are still available.</p>
+  <div class="hero-actions">
+    <a class="primary-button" href="<%= @root %>">go home</a>
+    <a class="secondary-button" href="<%= @root %>radar/">open radar</a>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <p><span class="prompt">$</span> GitHub Pages 404</p>
+    <p>&copy; <%= @year %> <%= HTML.escape(@site.handle) %></p>
+  </div>
+</footer>
+<%= @kofun %>
+</body>
+</html>

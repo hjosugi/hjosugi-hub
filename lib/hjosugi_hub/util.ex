@@ -4,6 +4,7 @@ defmodule HjosugiHub.Util do
   @tag_trim ~r/[-\/#]+$/u
   @html_decode_passes 2
   @html_entity_ref ~r/&(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]+);/u
+  @tracking_query_params ~w(dclid fbclid gbraid gclid igshid mc_cid mc_eid mkt_tok msclkid wbraid)
   @html_named_entities %{
     "amp" => "&",
     "apos" => "'",
@@ -32,6 +33,31 @@ defmodule HjosugiHub.Util do
     :crypto.hash(:sha256, source_id <> <<0>> <> raw_id)
     |> binary_part(0, 16)
     |> Base.encode16(case: :lower)
+  end
+
+  def normalize_url(nil), do: ""
+
+  def normalize_url(value) do
+    value = value |> to_string() |> String.trim()
+
+    case URI.parse(value) do
+      %URI{scheme: scheme, host: host} = uri when is_binary(scheme) and is_binary(host) ->
+        uri
+        |> Map.merge(%{
+          authority: nil,
+          fragment: nil,
+          host: normalize_host(host),
+          path: normalize_path(uri.path),
+          port: normalize_port(scheme, uri.port),
+          query: normalize_query(uri.query),
+          scheme: normalize_scheme(scheme),
+          userinfo: nil
+        })
+        |> URI.to_string()
+
+      _ ->
+        value
+    end
   end
 
   def clean_text(value) do
@@ -166,4 +192,58 @@ defmodule HjosugiHub.Util do
   end
 
   defp encode_codepoint(_codepoint), do: nil
+
+  defp normalize_scheme(scheme) do
+    case String.downcase(scheme) do
+      "http" -> "https"
+      "https" -> "https"
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_host(host) do
+    host
+    |> String.downcase()
+    |> String.replace_prefix("www.", "")
+  end
+
+  defp normalize_port(scheme, port) do
+    case {String.downcase(scheme), port} do
+      {"http", 80} -> nil
+      {"https", 443} -> nil
+      _ -> port
+    end
+  end
+
+  defp normalize_path(nil), do: ""
+
+  defp normalize_path(path) do
+    String.trim_trailing(path, "/")
+  end
+
+  defp normalize_query(nil), do: nil
+  defp normalize_query(""), do: nil
+
+  defp normalize_query(query) do
+    params =
+      query
+      |> URI.query_decoder()
+      |> Enum.reject(fn {key, _value} -> tracking_query_param?(key) end)
+      |> Enum.sort_by(fn {key, value} ->
+        {String.downcase(to_string(key)), to_string(value || "")}
+      end)
+
+    case params do
+      [] -> nil
+      params -> URI.encode_query(params)
+    end
+  rescue
+    _ -> query
+  end
+
+  defp tracking_query_param?(key) do
+    normalized = key |> to_string() |> String.downcase()
+
+    String.starts_with?(normalized, "utm_") or normalized in @tracking_query_params
+  end
 end

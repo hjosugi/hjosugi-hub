@@ -3,7 +3,7 @@ defmodule HjosugiHub.RendererTest do
 
   alias HjosugiHub.{Item, Renderer}
 
-  test "export writes radar pages and weighted public data" do
+  test "export writes radar pages, OPML, and weighted public data" do
     out_dir =
       Path.join(System.tmp_dir!(), "hjosugi-hub-renderer-#{System.unique_integer([:positive])}")
 
@@ -19,8 +19,31 @@ defmodule HjosugiHub.RendererTest do
     }
 
     feeds = [
-      %{id: "hacker-news", name: "Hacker News", kind: "aggregator", enabled: true, tags: []},
-      %{id: "disabled", name: "Disabled Feed", kind: "official", enabled: false, tags: []}
+      %{
+        id: "hacker-news",
+        name: "Hacker & News",
+        url: "https://example.com/hn.xml",
+        kind: "aggregator",
+        enabled: true,
+        tags: []
+      },
+      %{
+        id: "private-feed",
+        name: "Private Feed",
+        url: "https://example.com/private.xml",
+        kind: "newsletter",
+        enabled: true,
+        public: false,
+        tags: []
+      },
+      %{
+        id: "disabled",
+        name: "Disabled Feed",
+        url: "https://example.com/disabled.xml",
+        kind: "official",
+        enabled: false,
+        tags: []
+      }
     ]
 
     items = [
@@ -35,6 +58,18 @@ defmodule HjosugiHub.RendererTest do
         published_at: ~U[2026-06-20 12:00:00Z],
         collected_at: ~U[2026-06-20 13:00:00Z],
         tags: ["elixir"]
+      },
+      %Item{
+        id: "item-private",
+        source_id: "private-feed",
+        source_name: "Private Feed",
+        source_kind: "newsletter",
+        title: "Private source link",
+        url: "https://example.com/private",
+        summary: "Should not be exported",
+        published_at: ~U[2026-06-20 12:00:00Z],
+        collected_at: ~U[2026-06-20 13:00:00Z],
+        tags: []
       },
       %Item{
         id: "item-disabled",
@@ -73,18 +108,31 @@ defmodule HjosugiHub.RendererTest do
       assert File.exists?(Path.join(out_dir, "radar/index.html"))
       assert File.exists?(Path.join(out_dir, "popular/index.html"))
       assert File.exists?(Path.join(out_dir, "friends/index.html"))
+      assert File.exists?(Path.join(out_dir, "404.html"))
+      assert File.exists?(Path.join(out_dir, "feeds.opml"))
       refute File.exists?(legacy_data_dir)
 
       index = File.read!(Path.join(out_dir, "index.html"))
+      not_found = File.read!(Path.join(out_dir, "404.html"))
       radar = File.read!(Path.join(out_dir, "radar/index.html"))
       popular = File.read!(Path.join(out_dir, "popular/index.html"))
       friends = File.read!(Path.join(out_dir, "friends/index.html"))
       items_json = File.read!(Path.join(out_dir, "radar-data/items.json"))
+      feeds_json = File.read!(Path.join(out_dir, "radar-data/feeds.json"))
+      opml = File.read!(Path.join(out_dir, "feeds.opml"))
       sitemap = File.read!(Path.join(out_dir, "sitemap.xml"))
       pages = [index, radar, popular, friends]
 
       assert radar =~ ~s(data-category="all")
       assert popular =~ ~s(data-category="github")
+      assert not_found =~ "<title>404 - test-hub</title>"
+      assert not_found =~ "No such file or directory."
+      assert not_found =~ ~s(href="/hub/static/app.css?v=)
+      assert not_found =~ ~s(href="/hub/">go home</a>)
+      assert not_found =~ ~s(href="/hub/radar/">open radar</a>)
+      assert radar =~ ~s(href="../feeds.opml")
+      assert popular =~ ~s(href="../feeds.opml")
+      assert radar =~ ~s(<span>1 feeds</span>)
       assert Enum.all?(pages, &(&1 =~ ~s(<meta http-equiv="Content-Security-Policy")))
       assert Enum.all?(pages, &(&1 =~ "default-src &#39;self&#39;"))
 
@@ -101,8 +149,24 @@ defmodule HjosugiHub.RendererTest do
 
       assert items_json =~ ~s("weight":1.3)
       assert items_json =~ "An interesting link"
+      refute items_json =~ "Private source link"
       refute items_json =~ "Disabled source link"
       refute items_json =~ "Deleted source link"
+      assert feeds_json =~ "Hacker & News"
+      refute feeds_json =~ "Private Feed"
+      refute feeds_json =~ "Disabled Feed"
+      assert opml =~ ~s(<opml version="2.0">)
+      assert opml =~ ~s(<title>test-hub feeds</title>)
+      assert opml =~ ~s(text="Hacker &amp; News")
+      assert opml =~ ~s(title="Hacker &amp; News")
+      assert opml =~ ~s(type="rss")
+      assert opml =~ ~s(xmlUrl="https://example.com/hn.xml")
+      assert opml =~ ~s(category="aggregator")
+      assert opml =~ ~s(kind="aggregator")
+      refute opml =~ "Private Feed"
+      refute opml =~ "private.xml"
+      refute opml =~ "Disabled Feed"
+      refute opml =~ "disabled.xml"
       assert sitemap =~ "https://example.com/hub/radar/"
       assert sitemap =~ "https://example.com/hub/popular/"
       assert sitemap =~ "https://example.com/hub/friends/"

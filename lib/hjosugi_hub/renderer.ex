@@ -3,16 +3,18 @@ defmodule HjosugiHub.Renderer do
 
   require EEx
 
-  alias HjosugiHub.{Config, Kofun, Store}
+  alias HjosugiHub.{Config, HTML, Kofun, Store}
 
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
   @index_template Path.join(@template_dir, "index.html.eex")
   @radar_template Path.join(@template_dir, "radar.html.eex")
   @gallery_template Path.join(@template_dir, "gallery.html.eex")
+  @not_found_template Path.join(@template_dir, "404.html.eex")
 
   @external_resource @index_template
   @external_resource @radar_template
   @external_resource @gallery_template
+  @external_resource @not_found_template
 
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
   @content_security_policy Enum.join(
@@ -33,11 +35,13 @@ defmodule HjosugiHub.Renderer do
   EEx.function_from_file(:defp, :index_template, @index_template, [:assigns], [])
   EEx.function_from_file(:defp, :radar_template, @radar_template, [:assigns], [])
   EEx.function_from_file(:defp, :gallery_template, @gallery_template, [:assigns], [])
+  EEx.function_from_file(:defp, :not_found_template, @not_found_template, [:assigns], [])
 
   def export(site, feeds, items, out_dir, base_url \\ "") do
     asset_version = asset_version()
-    public_items = public_items(items, feeds)
-    assigns = build_assigns(site, feeds, public_items, base_url, asset_version)
+    public_feeds = enabled_public_feeds(feeds)
+    public_items = public_items(items, public_feeds)
+    assigns = build_assigns(site, public_feeds, public_items, base_url, asset_version)
 
     write_rendered(out_dir, "index.html", :index, assigns)
     write_radar_pages(out_dir, assigns)
@@ -49,10 +53,18 @@ defmodule HjosugiHub.Renderer do
       Map.put(assigns, :root, "../")
     )
 
+    write_rendered(
+      out_dir,
+      "404.html",
+      :not_found,
+      Map.put(assigns, :root, not_found_root(assigns.base_url))
+    )
+
     remove_legacy_public_data(out_dir)
     Store.write_json(Path.join(out_dir, "radar-data/items.json"), public_items)
     Store.write_json(Path.join(out_dir, "radar-data/site.json"), site)
-    Store.write_json(Path.join(out_dir, "radar-data/feeds.json"), public_feeds(feeds))
+    Store.write_json(Path.join(out_dir, "radar-data/feeds.json"), public_feeds_json(public_feeds))
+    File.write!(Path.join(out_dir, "feeds.opml"), feeds_opml(site, public_feeds))
     Store.write_json(Path.join(out_dir, "health.json"), health(assigns, public_items))
     copy_assets(out_dir, asset_version)
     File.write!(Path.join(out_dir, "static/favicon.svg"), Kofun.favicon_svg())
@@ -73,9 +85,8 @@ defmodule HjosugiHub.Renderer do
   end
 
   defp public_items(items, feeds) do
-    enabled_feeds = Enum.filter(feeds, &Map.get(&1, :enabled, true))
-    enabled_source_ids = MapSet.new(enabled_feeds, & &1.id)
-    weights = Map.new(enabled_feeds, fn feed -> {feed.id, Config.feed_weight(feed)} end)
+    enabled_source_ids = MapSet.new(feeds, & &1.id)
+    weights = Map.new(feeds, fn feed -> {feed.id, Config.feed_weight(feed)} end)
 
     items
     |> Enum.filter(&MapSet.member?(enabled_source_ids, &1.source_id))
@@ -89,7 +100,7 @@ defmodule HjosugiHub.Renderer do
     %{
       site: site,
       feeds: feeds,
-      enabled_feeds: Config.enabled_feeds(feeds),
+      enabled_feeds: length(feeds),
       featured: Enum.filter(Map.get(site, :projects, []), &Map.get(&1, :featured, false)),
       others: Enum.reject(Map.get(site, :projects, []), &Map.get(&1, :featured, false)),
       avatar_url: Config.avatar_url(site),
@@ -127,6 +138,20 @@ defmodule HjosugiHub.Renderer do
   defp render_template(:index, assigns), do: index_template(assigns)
   defp render_template(:radar, assigns), do: radar_template(assigns)
   defp render_template(:gallery, assigns), do: gallery_template(assigns)
+  defp render_template(:not_found, assigns), do: not_found_template(assigns)
+
+  defp not_found_root(""), do: "./"
+
+  defp not_found_root(base_url) do
+    path =
+      base_url
+      |> URI.parse()
+      |> Map.get(:path)
+      |> to_string()
+      |> String.trim_trailing("/")
+
+    if path == "", do: "/", else: path <> "/"
+  end
 
   defp copy_assets(out_dir, version) do
     target = Path.join(out_dir, "static")
@@ -170,11 +195,43 @@ defmodule HjosugiHub.Renderer do
     end)
   end
 
-  defp public_feeds(feeds) do
+  defp enabled_public_feeds(feeds) do
+    feeds
+    |> Enum.filter(&(Map.get(&1, :enabled, true) && Map.get(&1, :public, true)))
+    |> Enum.sort_by(&Map.get(&1, :name, ""))
+  end
+
+  defp public_feeds_json(feeds) do
     feeds
     |> Enum.map(&Map.take(&1, [:id, :name, :kind, :enabled, :tags]))
-    |> Enum.sort_by(& &1.name)
   end
+
+  defp feeds_opml(site, feeds) do
+    outlines = Enum.map_join(feeds, "\n", &feed_outline/1)
+
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <opml version="2.0">
+      <head>
+        <title>#{xml_attr(Map.get(site, :handle, "hjosugi-hub"))} feeds</title>
+      </head>
+      <body>
+    #{outlines}
+      </body>
+    </opml>
+    """
+    |> String.trim_leading()
+  end
+
+  defp feed_outline(feed) do
+    name = xml_attr(Map.get(feed, :name, Map.get(feed, :id, "")))
+    kind = xml_attr(Map.get(feed, :kind, "rss"))
+    url = xml_attr(Map.get(feed, :url, ""))
+
+    ~s(    <outline text="#{name}" title="#{name}" type="rss" xmlUrl="#{url}" category="#{kind}" kind="#{kind}"/>)
+  end
+
+  defp xml_attr(value), do: HTML.escape(value)
 
   defp robots(""), do: "User-agent: *\nAllow: /\n"
   defp robots(base_url), do: "User-agent: *\nAllow: /\nSitemap: #{base_url}/sitemap.xml\n"
