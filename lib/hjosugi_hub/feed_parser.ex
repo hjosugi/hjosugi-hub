@@ -59,6 +59,7 @@ defmodule HjosugiHub.FeedParser do
     content = Util.clean_text(raw_content)
     score = extract_score(raw_content)
     link = resolve_url(feed.url, element_text(item, "link"))
+    image = thumbnail_url(item, feed.url)
     raw_id = first([element_text(item, "guid"), link, title])
 
     if raw_id == "" do
@@ -84,6 +85,7 @@ defmodule HjosugiHub.FeedParser do
         title: title,
         url: link,
         author: author,
+        image: image,
         summary: Util.summarize(content),
         content: Util.truncate(content, 1500),
         published_at: published_at,
@@ -100,6 +102,7 @@ defmodule HjosugiHub.FeedParser do
     content = Util.clean_text(raw_content)
     score = extract_score(raw_content)
     link = atom_link(entry, feed.url)
+    image = thumbnail_url(entry, feed.url)
     raw_id = first([element_text(entry, "id"), link, title])
 
     if raw_id == "" do
@@ -134,6 +137,7 @@ defmodule HjosugiHub.FeedParser do
         title: title,
         url: link,
         author: author,
+        image: image,
         summary: Util.summarize(content),
         content: Util.truncate(content, 1500),
         published_at: published_at,
@@ -176,6 +180,18 @@ defmodule HjosugiHub.FeedParser do
 
   defp author_name(nil), do: ""
   defp author_name(author), do: author |> element_text("name") |> Util.clean_text()
+
+  defp thumbnail_url(element, base_url) do
+    element
+    |> descendant_elements("thumbnail")
+    |> Enum.map(&attr(&1, "url"))
+    |> Enum.find_value(fn url ->
+      case resolve_url(base_url, url) do
+        "" -> nil
+        resolved -> resolved
+      end
+    end) || ""
+  end
 
   defp parse_xml(body) do
     {:ok, _applications} = Application.ensure_all_started(:xmerl)

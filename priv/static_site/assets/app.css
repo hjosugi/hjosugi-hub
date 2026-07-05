@@ -248,6 +248,7 @@ h1 { font-size: clamp(3rem, 9vw, 7.4rem); margin: 0; max-width: 13ch; }
 .radar-card.keyboard-active { outline: 2px solid var(--accent); outline-offset: 6px; }
 .radar-card h2 { margin: 8px 0 10px; font-size: clamp(1.25rem, 3vw, 1.75rem); overflow-wrap: anywhere; word-break: break-word; }
 .radar-card h2 a { text-decoration: none; }
+.radar-thumb { display: block; width: min(240px, 100%); aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius); margin: 0 0 14px; background: var(--panel); }
 .radar-card > p { color: var(--muted); margin: 0 0 16px; overflow-wrap: anywhere; word-break: break-word; }
 .radar-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--accent-2); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow-wrap: anywhere; }
 .radar-footer { display: flex; justify-content: space-between; align-items: end; gap: 18px; color: var(--muted); font-size: 0.76rem; }

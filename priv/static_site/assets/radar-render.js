@@ -127,6 +127,16 @@ function renderCard(item, actions) {
     })
   );
 
+  const image = item.image
+    ? el("img", {
+        class: "radar-thumb",
+        src: safeURL(item.image),
+        alt: "",
+        loading: "lazy",
+        decoding: "async",
+      })
+    : null;
+
   const summary = el("p", { text: item.summary || "No summary provided by the source." });
   const footer = el("div", { class: "radar-footer" }, [
     el("div", { class: "chip-row" }, (item.tags || []).map((tag) => tagChip(tag, actions))),
@@ -136,7 +146,7 @@ function renderCard(item, actions) {
   return el(
     "article",
     { class: "radar-card", tabindex: "-1", "data-result-card": "", "aria-label": item.title || "Untitled" },
-    [meta, title, summary, footer]
+    [meta, title, image, summary, footer]
   );
 }
 

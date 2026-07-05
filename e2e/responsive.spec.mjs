@@ -142,6 +142,16 @@ test("cards show the link host in their meta", async ({ page }) => {
   for (const host of hosts) expect(host).toMatch(/(^|\.)github\.com$/);
 });
 
+test("cards render optional thumbnails lazily", async ({ page }) => {
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+
+  const thumb = page.locator(".radar-card", { hasText: "サーバ運用とＦＯＯＢＡＲ設計" }).locator(".radar-thumb");
+  await expect(thumb).toHaveAttribute("src", "https://i.ytimg.com/vi/abc123/hqdefault.jpg");
+  await expect(thumb).toHaveAttribute("loading", "lazy");
+  await expect(thumb).toHaveAttribute("alt", "");
+});
+
 test("score renders a labelled points value with a tooltip", async ({ page }) => {
   await page.goto("/popular/", { waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");

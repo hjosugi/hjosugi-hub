@@ -266,6 +266,35 @@ defmodule HjosugiHub.FeedParserTest do
     assert "frontend" in item.tags
   end
 
+  test "extracts YouTube media thumbnail URLs" do
+    feed = %{
+      id: "youtube",
+      name: "YouTube",
+      url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC123",
+      kind: "youtube",
+      tags: ["video"]
+    }
+
+    xml = """
+    <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+      <entry>
+        <id>yt:video:abc123</id>
+        <title>Video item</title>
+        <link rel="alternate" href="https://www.youtube.com/watch?v=abc123"/>
+        <published>2026-06-20T10:00:00Z</published>
+        <media:group>
+          <media:title>Video item</media:title>
+          <media:thumbnail url="https://i.ytimg.com/vi/abc123/hqdefault.jpg" width="480" height="360"/>
+        </media:group>
+      </entry>
+    </feed>
+    """
+
+    assert {:ok, [item]} = FeedParser.parse(xml, feed)
+    assert item.image == "https://i.ytimg.com/vi/abc123/hqdefault.jpg"
+    assert item.source_kind == "youtube"
+  end
+
   test "clamps feed published_at far in the future to collection time" do
     feed = %{
       id: "sample",

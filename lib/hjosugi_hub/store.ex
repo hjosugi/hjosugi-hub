@@ -151,6 +151,7 @@ defmodule HjosugiHub.Store do
       title: Map.get(item, :title),
       url: Map.get(item, :url),
       author: Map.get(item, :author),
+      image: Map.get(item, :image),
       summary: resanitize(Map.get(item, :summary)),
       content: resanitize(Map.get(item, :content)),
       published_at: clamp_published_at(Map.get(item, :published_at), collected_at),
@@ -173,6 +174,7 @@ defmodule HjosugiHub.Store do
       title: Map.get(item, :title),
       url: Map.get(item, :url),
       author: empty_to_nil(Map.get(item, :author)),
+      image: empty_to_nil(Map.get(item, :image)),
       summary: Map.get(item, :summary),
       content: empty_to_nil(Map.get(item, :content)),
       published_at: Map.get(item, :published_at),
@@ -219,6 +221,7 @@ defmodule HjosugiHub.Store do
   defp merge_public_item_group([representative | _rest] = items) do
     representative
     |> Map.put(:tags, Util.merge_tags(Enum.map(items, &Map.get(&1, :tags, []))))
+    |> Map.put(:image, first_non_empty(items, :image))
     |> Map.put(:sources, Enum.map(items, &public_item_source/1))
   end
 
@@ -230,8 +233,16 @@ defmodule HjosugiHub.Store do
       source_kind: Map.get(item, :source_kind),
       title: Map.get(item, :title),
       url: Map.get(item, :url),
+      image: Map.get(item, :image),
       score: Map.get(item, :score)
     }
+  end
+
+  defp first_non_empty(items, key) do
+    Enum.find_value(items, fn item ->
+      value = Map.get(item, key)
+      if value in [nil, ""], do: nil, else: value
+    end)
   end
 
   # Re-clean cached text so items stored before a clean_text fix (e.g. raw

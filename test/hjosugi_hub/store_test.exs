@@ -14,6 +14,7 @@ defmodule HjosugiHub.StoreTest do
       source_kind: "rss",
       title: "Round trip",
       url: "https://example.com/round-trip",
+      image: "https://i.ytimg.com/vi/round-trip/hqdefault.jpg",
       summary: "summary",
       content: "content",
       published_at: ~U[2026-06-20 12:00:00Z],
@@ -23,7 +24,8 @@ defmodule HjosugiHub.StoreTest do
 
     Store.write_items(path, [item])
 
-    assert [%Item{id: "round-trip-1", tags: ["cache"]}] = Store.read_items(path)
+    assert [%Item{id: "round-trip-1", tags: ["cache"], image: image}] = Store.read_items(path)
+    assert image == "https://i.ytimg.com/vi/round-trip/hqdefault.jpg"
 
     File.rm(path)
   end
@@ -220,6 +222,7 @@ defmodule HjosugiHub.StoreTest do
         source_kind: "official",
         title: "Original post",
         url: "HTTP://www.Example.com/posts/elixir/?b=2&utm_source=feed&a=1#comments",
+        image: "",
         summary: "Origin summary",
         published_at: ~U[2026-06-20 12:00:00Z],
         collected_at: ~U[2026-06-20 13:00:00Z],
@@ -232,6 +235,7 @@ defmodule HjosugiHub.StoreTest do
         source_kind: "aggregator",
         title: "HN discussion",
         url: "https://example.com/posts/elixir?a=1&b=2&utm_medium=social",
+        image: "https://i.ytimg.com/vi/grouped/hqdefault.jpg",
         summary: "HN summary",
         published_at: ~U[2026-06-20 12:30:00Z],
         collected_at: ~U[2026-06-20 13:00:00Z],
@@ -260,6 +264,7 @@ defmodule HjosugiHub.StoreTest do
       Enum.find(public_items, &(&1.normalized_url == "https://example.com/posts/elixir?a=1&b=2"))
 
     assert grouped.id == "origin-1"
+    assert grouped.image == "https://i.ytimg.com/vi/grouped/hqdefault.jpg"
     assert grouped.tags == ["aggregator", "elixir", "official"]
     assert Enum.map(grouped.sources, & &1.source_id) == ["origin", "hacker-news"]
     assert Enum.find(grouped.sources, &(&1.source_id == "hacker-news")).score == 42

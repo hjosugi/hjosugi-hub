@@ -35,7 +35,7 @@ defmodule HjosugiHub.Renderer do
                                "default-src 'self'",
                                "base-uri 'none'",
                                "object-src 'none'",
-                               "img-src 'self' https://github.com https://avatars.githubusercontent.com",
+                               "img-src 'self' https://github.com https://avatars.githubusercontent.com https://i.ytimg.com",
                                "script-src 'self'",
                                "style-src 'self'",
                                "connect-src 'self'",

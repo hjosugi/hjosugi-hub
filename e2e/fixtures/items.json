@@ -49,6 +49,7 @@
     "title": "サーバ運用とＦＯＯＢＡＲ設計",
     "url": "https://example.com/japanese-normalization",
     "author": "sample",
+    "image": "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
     "summary": "ﾆﾎﾝｺﾞの検索正規化を確認するためのfixture。",
     "content": "全角英字、半角カナ、長音の表記ゆれを同じ検索インデックスで扱う。",
     "score": 0,

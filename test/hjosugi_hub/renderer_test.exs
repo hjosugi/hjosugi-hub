@@ -177,7 +177,7 @@ defmodule HjosugiHub.RendererTest do
       assert Enum.all?(
                pages,
                &(&1 =~
-                   "img-src &#39;self&#39; https://github.com https://avatars.githubusercontent.com")
+                   "img-src &#39;self&#39; https://github.com https://avatars.githubusercontent.com https://i.ytimg.com")
              )
 
       assert Enum.all?(
