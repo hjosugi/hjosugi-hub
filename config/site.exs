@@ -67,6 +67,20 @@
       featured: true
     },
     %{
+      name: "Ayame Editor",
+      url: "https://github.com/hjosugi/ayame-editor",
+      docs_url: "https://hjosugi.github.io/ayame-editor/",
+      summary:
+        "A fast desktop text editor for very large files. It pairs a Rust core with a local web UI and optional native window so huge text files can open, search, and edit without pretending they are small.",
+      stack: ["Rust", "Axum", "TypeScript", "Wry", "WebView", "CLI"],
+      highlights: [
+        "Memory-mapped and sparsely indexed internals keep large-file scans practical.",
+        "Runs as a CLI/local web editor, with a native desktop window available for app-style use.",
+        "Release builds target macOS, Windows, and Linux, with docs and install scripts alongside the source."
+      ],
+      featured: true
+    },
+    %{
       name: "sql-dialect-fmt",
       url: "https://github.com/hjosugi/sql-dialect-fmt",
       summary:
