@@ -1,20 +1,61 @@
 (() => {
+  const THEME_KEY = "hjosugi-hub-theme";
+  const CRT_KEY = "hjosugi-hub-crt";
+  const root = document.documentElement;
   const body = document.body;
-  const toggle = document.getElementById("crt-toggle");
-  const stored = localStorage.getItem("hjosugi-hub-crt");
-  if (stored === "off") {
-    body.classList.add("crt-off");
-    if (toggle) {
-      toggle.textContent = "crt:off";
-      toggle.setAttribute("aria-pressed", "false");
+  const themeToggle = document.getElementById("theme-toggle");
+  const crtToggle = document.getElementById("crt-toggle");
+
+  function getStored(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
     }
   }
 
-  toggle?.addEventListener("click", () => {
-    const off = body.classList.toggle("crt-off");
-    localStorage.setItem("hjosugi-hub-crt", off ? "off" : "on");
-    toggle.textContent = off ? "crt:off" : "crt:on";
-    toggle.setAttribute("aria-pressed", String(!off));
+  function setStored(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Theme switching should still work even when storage is unavailable.
+    }
+  }
+
+  function applyTheme(value) {
+    const theme = value === "light" ? "light" : "dark";
+    root.dataset.theme = theme;
+
+    if (themeToggle) {
+      themeToggle.textContent = `theme:${theme}`;
+      themeToggle.setAttribute("aria-pressed", String(theme === "light"));
+      themeToggle.setAttribute("aria-label", `Switch to ${theme === "light" ? "dark" : "light"} theme`);
+    }
+  }
+
+  function applyCrt(value) {
+    const off = value === "off";
+    body.classList.toggle("crt-off", off);
+
+    if (crtToggle) {
+      crtToggle.textContent = off ? "crt:off" : "crt:on";
+      crtToggle.setAttribute("aria-pressed", String(!off));
+    }
+  }
+
+  applyTheme(getStored(THEME_KEY));
+  applyCrt(getStored(CRT_KEY));
+
+  themeToggle?.addEventListener("click", () => {
+    const next = root.dataset.theme === "light" ? "dark" : "light";
+    applyTheme(next);
+    setStored(THEME_KEY, next);
+  });
+
+  crtToggle?.addEventListener("click", () => {
+    const next = body.classList.contains("crt-off") ? "on" : "off";
+    applyCrt(next);
+    setStored(CRT_KEY, next);
   });
 
   document.addEventListener("keydown", (event) => {

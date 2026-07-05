@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="description" content="<%= HTML.escape(@page.description) %>">
@@ -28,7 +28,8 @@
       <a class="nav-link" href="<%= @root %>friends/">friends/</a>
       <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
     </nav>
-    <button class="ghost-button" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
+    <button class="ghost-button theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light theme">theme:dark</button>
+    <button class="ghost-button crt-toggle" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
   </div>
 </header>
 <main class="shell hero">
