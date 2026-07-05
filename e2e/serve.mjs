@@ -40,7 +40,10 @@ async function seed() {
     const at = new Date(now - i * 86_400_000).toISOString();
     return { ...item, published_at: at, collected_at: at };
   });
-  await writeFile(join(root, "radar-data", "items.json"), JSON.stringify(seeded), "utf8");
+  const recent = seeded.map(({ content: _content, ...item }) => item);
+  await writeFile(join(root, "radar-data", "items.json"), JSON.stringify(recent), "utf8");
+  await writeFile(join(root, "radar-data", "items-recent.json"), JSON.stringify(recent), "utf8");
+  await writeFile(join(root, "radar-data", "items-archive.json"), JSON.stringify(seeded), "utf8");
 }
 
 async function serveFile(res, urlPath) {

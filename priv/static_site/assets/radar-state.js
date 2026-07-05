@@ -14,10 +14,12 @@ export function createRadarState(category = "all") {
   let sourceFacets = [];
   let uniqueTags = [];
   let uniqueSources = [];
+  let totalCountOverride = null;
   const saved = loadSaved();
 
-  function setItems(data) {
+  function setItems(data, options = {}) {
     allItems = (Array.isArray(data) ? data : []).map(prepare);
+    totalCountOverride = Number.isFinite(options.totalCount) ? options.totalCount : null;
     applyCategory();
   }
 
@@ -101,7 +103,7 @@ export function createRadarState(category = "all") {
       defaultView,
       ranked,
       visible: ranked.slice(0, 80),
-      totalCount: items.length,
+      totalCount: totalCount(),
       savedCount: items.filter(isSaved).length,
       savedSize: saved.size,
       tagFacets,
@@ -128,7 +130,7 @@ export function createRadarState(category = "all") {
 
   return {
     setItems,
-    totalCount: () => items.length,
+    totalCount,
     filteredView,
     suggestions,
     isSaved,
@@ -136,6 +138,10 @@ export function createRadarState(category = "all") {
     exportSaved,
     importSaved,
   };
+
+  function totalCount() {
+    return totalCountOverride ?? items.length;
+  }
 }
 
 function exportSavedItem(key, item) {

@@ -25,6 +25,7 @@ defmodule HjosugiHub.Renderer do
 
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
   @feed_item_limit 50
+  @recent_days 30
   @digest_week_count 4
   @digest_items_per_week 10
   @digest_window_seconds 7 * 24 * 60 * 60
@@ -78,7 +79,10 @@ defmodule HjosugiHub.Renderer do
     )
 
     remove_legacy_public_data(out_dir)
-    Store.write_json(Path.join(out_dir, "radar-data/items.json"), public_items)
+    recent_items = recent_public_items(public_items, assigns.generated_at)
+    Store.write_json(Path.join(out_dir, "radar-data/items.json"), recent_items)
+    Store.write_json(Path.join(out_dir, "radar-data/items-recent.json"), recent_items)
+    Store.write_json(Path.join(out_dir, "radar-data/items-archive.json"), public_items)
     Store.write_json(Path.join(out_dir, "radar-data/site.json"), site)
     Store.write_json(Path.join(out_dir, "radar-data/feeds.json"), public_feeds_json(public_feeds))
     File.write!(Path.join(out_dir, "feeds.opml"), feeds_opml(site, public_feeds))
@@ -141,6 +145,14 @@ defmodule HjosugiHub.Renderer do
     }
   end
 
+  defp recent_public_items(public_items, generated_at) do
+    cutoff = DateTime.add(generated_at, -@recent_days * 86_400, :second)
+
+    public_items
+    |> Enum.filter(&(DateTime.compare(item_datetime(&1), cutoff) != :lt))
+    |> Enum.map(&Map.delete(&1, :content))
+  end
+
   # The radar template backs two separate pages: /radar/ (the full searchable
   # reading list) and /popular/ (a GitHub-picks page scoped to github.com
   # links). `root` is the relative path back to the site root.
@@ -152,7 +164,14 @@ defmodule HjosugiHub.Renderer do
   defp write_radar_pages(out_dir, assigns) do
     Enum.each(@radar_pages, fn {path, category, root} ->
       page = if category == "github", do: :popular, else: :radar
-      scoped = page_assigns(assigns, page, %{category: category, root: root})
+
+      scoped =
+        page_assigns(assigns, page, %{
+          category: category,
+          root: root,
+          total_items: radar_total_items(assigns.items, category)
+        })
+
       write_rendered(Path.join(out_dir, path), "index.html", :radar, scoped)
     end)
   end
@@ -177,6 +196,20 @@ defmodule HjosugiHub.Renderer do
   defp render_template(:digest, assigns), do: digest_template(assigns)
   defp render_template(:gallery, assigns), do: gallery_template(assigns)
   defp render_template(:not_found, assigns), do: not_found_template(assigns)
+
+  defp radar_total_items(items, "github"), do: Enum.count(items, &github_item?/1)
+  defp radar_total_items(items, _category), do: length(items)
+
+  defp github_item?(item) do
+    case URI.parse(Map.get(item, :url, "")) do
+      %URI{host: host} when is_binary(host) ->
+        host = String.downcase(host)
+        host == "github.com" or String.ends_with?(host, ".github.com")
+
+      _ ->
+        false
+    end
+  end
 
   defp page_assigns(assigns, page, overrides \\ %{}) do
     assigns = Map.merge(assigns, overrides)

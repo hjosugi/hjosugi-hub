@@ -181,6 +181,26 @@ test("static assets are cache-busted with a version query", async ({ page }) => 
   expect(failed.filter((u) => /\/static\/.+\.js/.test(u))).toEqual([]);
 });
 
+test("radar defers archive payload until search", async ({ page }) => {
+  const payloads = [];
+  page.on("request", (req) => {
+    const url = req.url();
+    if (url.includes("/radar-data/")) payloads.push(new URL(url).pathname);
+  });
+
+  await page.goto("/radar/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+
+  expect(payloads.some((path) => path.endsWith("/items-recent.json"))).toBe(true);
+  expect(payloads.some((path) => path.endsWith("/items-archive.json"))).toBe(false);
+
+  await page.locator("#radar-search").fill("replication");
+  await page.locator("#static-search-form").press("Enter");
+
+  await expect.poll(() => payloads.some((path) => path.endsWith("/items-archive.json"))).toBe(true);
+  await expect(page.locator(".radar-card", { hasText: "Designing a globally distributed data service" })).toBeVisible();
+});
+
 test("radar search input stays inside the viewport", async ({ page }) => {
   await page.goto("/radar/", { waitUntil: "networkidle" });
   const input = page.locator("#radar-search");

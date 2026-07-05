@@ -20,6 +20,9 @@ import { renderRadar, emptyState } from "./radar-render.js";
   const totalCountNode = app.querySelector("[data-total-count]");
   const suggestNode = document.getElementById("search-suggest");
   const state = createRadarState(app.dataset.category || "all");
+  const totalItems = Number(app.dataset.totalItems || 0);
+  let archiveLoaded = false;
+  let archiveRequest = null;
   let activeResultIndex = -1;
   let focusActiveAfterRender = false;
 
@@ -30,13 +33,13 @@ import { renderRadar, emptyState } from "./radar-render.js";
     navigate(params);
   };
 
-  fetch(app.dataset.itemsUrl)
+  fetch(app.dataset.itemsRecentUrl || app.dataset.itemsUrl)
     .then((response) => {
       if (!response.ok) throw new Error("items request failed");
       return response.json();
     })
     .then((data) => {
-      state.setItems(data);
+      state.setItems(data, { totalCount: totalItems || data.length });
       updateFromLocation();
     })
     .catch(() => {
@@ -55,9 +58,19 @@ import { renderRadar, emptyState } from "./radar-render.js";
   window.addEventListener("popstate", updateFromLocation);
   document.addEventListener("keydown", handleResultKeys);
 
-  function updateFromLocation() {
+  async function updateFromLocation() {
     const params = currentParams();
     input.value = params.get("q") || "";
+    if (needsArchive(params) && !archiveLoaded) {
+      nodes.summaryNode.textContent = "Loading full radar archive...";
+      try {
+        await loadArchive();
+      } catch (_) {
+        nodes.summaryNode.textContent = "Could not load the full radar archive.";
+        nodes.resultsNode.replaceChildren(emptyState("!", "The static archive data file is missing or unavailable."));
+        return;
+      }
+    }
     render(params);
   }
 
@@ -93,6 +106,29 @@ import { renderRadar, emptyState } from "./radar-render.js";
   }
 
   const currentParams = () => new URLSearchParams(location.search);
+
+  function needsArchive(params) {
+    return Boolean(params.get("q") || params.get("tag") || params.get("source") || params.get("saved"));
+  }
+
+  function loadArchive() {
+    if (archiveLoaded) return Promise.resolve();
+    if (archiveRequest) return archiveRequest;
+    archiveRequest = fetch(app.dataset.itemsArchiveUrl || app.dataset.itemsUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error("archive request failed");
+        return response.json();
+      })
+      .then((data) => {
+        state.setItems(data);
+        archiveLoaded = true;
+      })
+      .catch((error) => {
+        archiveRequest = null;
+        throw error;
+      });
+    return archiveRequest;
+  }
 
   function resultCards() {
     return [...nodes.resultsNode.querySelectorAll("[data-result-card]")];

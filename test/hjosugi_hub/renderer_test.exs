@@ -55,6 +55,7 @@ defmodule HjosugiHub.RendererTest do
         title: "An interesting link",
         url: "https://example.com/item",
         summary: "A summary",
+        content: "Long searchable body content",
         published_at: ~U[2026-06-20 12:00:00Z],
         collected_at: ~U[2026-06-20 13:00:00Z],
         tags: ["elixir"]
@@ -150,6 +151,8 @@ defmodule HjosugiHub.RendererTest do
       digest = File.read!(Path.join(out_dir, "digest/index.html"))
       friends = File.read!(Path.join(out_dir, "friends/index.html"))
       items_json = File.read!(Path.join(out_dir, "radar-data/items.json"))
+      recent_json = File.read!(Path.join(out_dir, "radar-data/items-recent.json"))
+      archive_json = File.read!(Path.join(out_dir, "radar-data/items-archive.json"))
       feeds_json = File.read!(Path.join(out_dir, "radar-data/feeds.json"))
       health_json = File.read!(Path.join(out_dir, "health.json"))
       opml = File.read!(Path.join(out_dir, "feeds.opml"))
@@ -218,6 +221,9 @@ defmodule HjosugiHub.RendererTest do
 
       assert items_json =~ ~s("weight":1.3)
       assert items_json =~ "An interesting link"
+      assert recent_json =~ "An interesting link"
+      refute recent_json =~ "Long searchable body content"
+      assert archive_json =~ "Long searchable body content"
       refute items_json =~ "Private source link"
       refute items_json =~ "Disabled source link"
       refute items_json =~ "Deleted source link"
