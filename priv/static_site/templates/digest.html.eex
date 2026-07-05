@@ -1,0 +1,105 @@
+<% alias HjosugiHub.HTML %>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="<%= HTML.escape(@page.description) %>">
+  <%= social_meta_tags(@page) %>
+  <%= feed_discovery_tags(@page) %>
+  <%= canonical_link_tag(@page) %>
+  <title><%= HTML.escape(@page.title) %></title>
+  <link rel="icon" href="<%= @root %>static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="<%= @root %>static/app.css?v=<%= @asset_version %>">
+  <script defer src="<%= @root %>static/app-static.js?v=<%= @asset_version %>"></script>
+  <script type="module" src="<%= @root %>static/pet.js?v=<%= @asset_version %>"></script>
+</head>
+<body class="crt">
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="<%= @root %>" aria-label="Home"><span class="prompt">~/</span><%= HTML.escape(@site.handle) %></a>
+    <nav aria-label="Primary navigation">
+      <a class="nav-link" href="<%= @root %>radar/">radar/</a>
+      <a class="nav-link" href="<%= @root %>popular/">popular/</a>
+      <a class="nav-link active" href="<%= @root %>digest/">digest/</a>
+      <a class="nav-link" href="<%= @root %>friends/">friends/</a>
+      <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
+    </nav>
+    <button class="ghost-button" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
+  </div>
+</header>
+<main class="shell inbox-shell">
+  <section class="inbox-header">
+    <div>
+      <p class="terminal-line"><span class="prompt">$</span> mix hub.digest --window weekly</p>
+      <h1>Weekly digest</h1>
+      <p>Top radar items ranked by score * feed weight / rebuilt <%= HTML.escape(@generated_text) %></p>
+    </div>
+    <div class="runtime-panel">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span>static</span>
+      <span>/</span>
+      <span><%= @enabled_feeds %> feeds</span>
+      <span>/</span>
+      <a href="<%= @root %>feeds.opml">feeds.opml</a>
+    </div>
+  </section>
+
+  <section class="results" aria-labelledby="digest-ranking">
+    <div class="results-topline">
+      <p id="digest-ranking">Recent scored items only. Ties fall back to score, time, title, source, and id.</p>
+      <a href="<%= @root %>radar/">open radar</a>
+    </div>
+    <p class="static-note">Items without a numeric score are excluded from digest rankings because the ranking is score * feed weight. They still appear in the radar index.</p>
+
+    <%= if @digest_sections == [] do %>
+    <div class="empty-state">
+      <p class="terminal-line"><span class="prompt">*</span> no scored items</p>
+      <h2>No scored radar items in the recent digest windows.</h2>
+      <p>Aggregator scores may be unavailable for some sources; those items stay searchable in radar.</p>
+    </div>
+    <% else %>
+      <%= for section <- @digest_sections do %>
+      <section class="filter-section" aria-labelledby="digest-section-<%= section.index %>">
+        <h2 id="digest-section-<%= section.index %>"><%= HTML.escape(section.label) %></h2>
+        <p class="static-note"><%= HTML.escape(section.period) %> / top <%= length(section.items) %></p>
+
+        <%= for entry <- section.items do %>
+        <article class="radar-card">
+          <div class="radar-meta">
+            <span>#<%= entry.rank %></span>
+            <span><%= HTML.escape(entry.item_date) %></span>
+            <span><%= HTML.escape(entry.source_name) %></span>
+            <span class="radar-score" title="score * feed weight"><%= HTML.escape(format_digest_number(entry.rank_score)) %></span>
+          </div>
+          <h2>
+            <%= if entry.url != "" do %>
+            <a href="<%= HTML.escape(entry.url) %>" target="_blank" rel="noopener"><%= HTML.escape(entry.title) %></a>
+            <% else %>
+            <%= HTML.escape(entry.title) %>
+            <% end %>
+          </h2>
+          <%= if entry.summary != "" do %><p><%= HTML.escape(entry.summary) %></p><% end %>
+          <div class="radar-footer">
+            <div class="chip-row"><%= for tag <- entry.tags do %><span class="chip"><%= HTML.escape(tag) %></span><% end %></div>
+            <span>score <%= HTML.escape(format_digest_number(entry.score)) %> * weight <%= HTML.escape(format_digest_number(entry.weight)) %></span>
+          </div>
+        </article>
+        <% end %>
+      </section>
+      <% end %>
+    <% end %>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <p><span class="prompt">$</span> weekly static digest from public radar data</p>
+    <p>&copy; <%= @year %> <%= HTML.escape(@site.handle) %></p>
+  </div>
+</footer>
+<%= @kofun %>
+</body>
+</html>

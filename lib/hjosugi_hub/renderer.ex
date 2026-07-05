@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Renderer do
-  @moduledoc false
+  @moduledoc """
+  Static site exporter for the hub.
+
+  It renders EEx templates, public data files, feeds, health metadata, and
+  static assets from validated site/feed config plus cached radar items.
+  """
 
   require EEx
 
@@ -8,16 +13,21 @@ defmodule HjosugiHub.Renderer do
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
   @index_template Path.join(@template_dir, "index.html.eex")
   @radar_template Path.join(@template_dir, "radar.html.eex")
+  @digest_template Path.join(@template_dir, "digest.html.eex")
   @gallery_template Path.join(@template_dir, "gallery.html.eex")
   @not_found_template Path.join(@template_dir, "404.html.eex")
 
   @external_resource @index_template
   @external_resource @radar_template
+  @external_resource @digest_template
   @external_resource @gallery_template
   @external_resource @not_found_template
 
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
   @feed_item_limit 50
+  @digest_week_count 4
+  @digest_items_per_week 10
+  @digest_window_seconds 7 * 24 * 60 * 60
   @og_image_path "static/og-image.svg"
   @stale_failure_threshold 7
   @content_security_policy Enum.join(
@@ -37,6 +47,7 @@ defmodule HjosugiHub.Renderer do
 
   EEx.function_from_file(:defp, :index_template, @index_template, [:assigns], [])
   EEx.function_from_file(:defp, :radar_template, @radar_template, [:assigns], [])
+  EEx.function_from_file(:defp, :digest_template, @digest_template, [:assigns], [])
   EEx.function_from_file(:defp, :gallery_template, @gallery_template, [:assigns], [])
   EEx.function_from_file(:defp, :not_found_template, @not_found_template, [:assigns], [])
 
@@ -50,6 +61,7 @@ defmodule HjosugiHub.Renderer do
 
     write_rendered(out_dir, "index.html", :index, page_assigns(assigns, :index))
     write_radar_pages(out_dir, assigns)
+    write_digest_page(out_dir, assigns)
 
     write_rendered(
       Path.join(out_dir, "friends"),
@@ -119,6 +131,7 @@ defmodule HjosugiHub.Renderer do
       avatar_url: Config.avatar_url(site),
       kofun: Kofun.pet_html(),
       items: public_items,
+      digest_sections: digest_sections(public_items, now),
       generated_at: now,
       generated_text: Calendar.strftime(now, "%Y-%m-%d %H:%M UTC"),
       year: now.year,
@@ -144,6 +157,15 @@ defmodule HjosugiHub.Renderer do
     end)
   end
 
+  defp write_digest_page(out_dir, assigns) do
+    write_rendered(
+      Path.join(out_dir, "digest"),
+      "index.html",
+      :digest,
+      page_assigns(assigns, :digest, %{root: "../"})
+    )
+  end
+
   defp write_rendered(dir, file, template, assigns) do
     File.mkdir_p!(dir)
     html = render_template(template, assigns)
@@ -152,6 +174,7 @@ defmodule HjosugiHub.Renderer do
 
   defp render_template(:index, assigns), do: index_template(assigns)
   defp render_template(:radar, assigns), do: radar_template(assigns)
+  defp render_template(:digest, assigns), do: digest_template(assigns)
   defp render_template(:gallery, assigns), do: gallery_template(assigns)
   defp render_template(:not_found, assigns), do: not_found_template(assigns)
 
@@ -183,6 +206,15 @@ defmodule HjosugiHub.Renderer do
       path: "popular/",
       title: "Popular on GitHub - #{assigns.site.handle}",
       description: "GitHub links surfaced on #{assigns.site.handle}'s technical radar."
+    })
+  end
+
+  defp page_metadata(assigns, :digest) do
+    build_page_metadata(assigns, %{
+      path: "digest/",
+      title: "Weekly digest - #{assigns.site.handle}",
+      description:
+        "Top recent radar items ranked by score multiplied by feed weight for #{assigns.site.handle}."
     })
   end
 
@@ -507,6 +539,109 @@ defmodule HjosugiHub.Renderer do
       author -> [%{name: author}]
     end
   end
+
+  defp digest_sections(public_items, generated_at) do
+    0..(@digest_week_count - 1)
+    |> Enum.map(&digest_section(public_items, generated_at, &1))
+    |> Enum.reject(&(Map.get(&1, :items) == []))
+  end
+
+  defp digest_section(public_items, generated_at, index) do
+    end_at = DateTime.add(generated_at, -index * @digest_window_seconds, :second)
+    start_at = DateTime.add(end_at, -@digest_window_seconds, :second)
+
+    items =
+      public_items
+      |> Enum.filter(&scored_digest_item?/1)
+      |> Enum.filter(&(digest_window_index(&1, generated_at) == index))
+      |> rank_digest_items()
+      |> Enum.take(@digest_items_per_week)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {item, rank} -> digest_entry(item, rank) end)
+
+    %{
+      index: index,
+      label: digest_section_label(index),
+      period: "#{digest_date(start_at)} - #{digest_date(end_at)} UTC",
+      items: items
+    }
+  end
+
+  defp scored_digest_item?(item), do: is_number(Map.get(item, :score))
+
+  defp digest_window_index(item, generated_at) do
+    diff = DateTime.diff(generated_at, item_datetime(item), :second)
+
+    cond do
+      diff < 0 -> nil
+      diff >= @digest_week_count * @digest_window_seconds -> nil
+      true -> div(diff, @digest_window_seconds)
+    end
+  end
+
+  defp rank_digest_items(items) do
+    Enum.sort_by(items, fn item ->
+      {
+        -digest_rank_score(item),
+        -Map.get(item, :score),
+        -DateTime.to_unix(item_datetime(item)),
+        String.downcase(item_title(item)),
+        non_empty_string(Map.get(item, :source_id)),
+        non_empty_string(Map.get(item, :id)),
+        item_url(item)
+      }
+    end)
+  end
+
+  defp digest_entry(item, rank) do
+    %{
+      rank: rank,
+      title: item_title(item),
+      url: item_url(item),
+      summary: item_summary(item),
+      source_name: digest_source_name(item),
+      tags: item_tags(item),
+      item_date: digest_date(item_datetime(item)),
+      score: Map.get(item, :score),
+      weight: digest_weight(item),
+      rank_score: digest_rank_score(item)
+    }
+  end
+
+  defp digest_source_name(item) do
+    case non_empty_string(Map.get(item, :source_name)) do
+      "" -> non_empty_string(Map.get(item, :source_id))
+      source_name -> source_name
+    end
+  end
+
+  defp digest_section_label(0), do: "Last 7 days"
+
+  defp digest_section_label(index) do
+    "#{index * 7 + 1}-#{(index + 1) * 7} days ago"
+  end
+
+  defp digest_rank_score(item), do: Map.get(item, :score) * digest_weight(item)
+
+  defp digest_weight(item) do
+    case Map.get(item, :weight) do
+      weight when is_number(weight) -> weight
+      _ -> 1.0
+    end
+  end
+
+  defp digest_date(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%Y-%m-%d")
+  defp digest_date(_datetime), do: ""
+
+  defp format_digest_number(number) when is_integer(number), do: Integer.to_string(number)
+
+  defp format_digest_number(number) when is_float(number) do
+    number
+    |> :erlang.float_to_binary(decimals: 1)
+    |> String.replace_suffix(".0", "")
+  end
+
+  defp format_digest_number(number), do: to_string(number)
 
   defp feed_items(public_items) do
     public_items
@@ -846,6 +981,7 @@ defmodule HjosugiHub.Renderer do
       <url><loc>#{base_url}/</loc></url>
       <url><loc>#{base_url}/radar/</loc></url>
       <url><loc>#{base_url}/popular/</loc></url>
+      <url><loc>#{base_url}/digest/</loc></url>
       <url><loc>#{base_url}/friends/</loc></url>
     </urlset>
     """

@@ -134,6 +134,7 @@ defmodule HjosugiHub.RendererTest do
       assert File.exists?(Path.join(out_dir, "index.html"))
       assert File.exists?(Path.join(out_dir, "radar/index.html"))
       assert File.exists?(Path.join(out_dir, "popular/index.html"))
+      assert File.exists?(Path.join(out_dir, "digest/index.html"))
       assert File.exists?(Path.join(out_dir, "friends/index.html"))
       assert File.exists?(Path.join(out_dir, "404.html"))
       assert File.exists?(Path.join(out_dir, "feeds.opml"))
@@ -146,6 +147,7 @@ defmodule HjosugiHub.RendererTest do
       not_found = File.read!(Path.join(out_dir, "404.html"))
       radar = File.read!(Path.join(out_dir, "radar/index.html"))
       popular = File.read!(Path.join(out_dir, "popular/index.html"))
+      digest = File.read!(Path.join(out_dir, "digest/index.html"))
       friends = File.read!(Path.join(out_dir, "friends/index.html"))
       items_json = File.read!(Path.join(out_dir, "radar-data/items.json"))
       feeds_json = File.read!(Path.join(out_dir, "radar-data/feeds.json"))
@@ -155,10 +157,11 @@ defmodule HjosugiHub.RendererTest do
       json_feed = File.read!(Path.join(out_dir, "feed.json"))
       og_image = File.read!(Path.join(out_dir, "static/og-image.svg"))
       sitemap = File.read!(Path.join(out_dir, "sitemap.xml"))
-      pages = [index, radar, popular, friends, not_found]
+      pages = [index, radar, popular, digest, friends, not_found]
 
       assert radar =~ ~s(data-category="all")
       assert popular =~ ~s(data-category="github")
+      assert digest =~ "No scored radar items in the recent digest windows."
       assert not_found =~ "<title>404 - test-hub</title>"
       assert not_found =~ "No such file or directory."
       assert not_found =~ ~s(href="/hub/static/app.css?v=)
@@ -166,6 +169,7 @@ defmodule HjosugiHub.RendererTest do
       assert not_found =~ ~s(href="/hub/radar/">open radar</a>)
       assert radar =~ ~s(href="../feeds.opml")
       assert popular =~ ~s(href="../feeds.opml")
+      assert digest =~ ~s(href="../feeds.opml")
       assert radar =~ ~s(<span>1 feeds</span>)
       assert Enum.all?(pages, &(&1 =~ ~s(<meta http-equiv="Content-Security-Policy")))
       assert Enum.all?(pages, &(&1 =~ "default-src &#39;self&#39;"))
@@ -208,6 +212,7 @@ defmodule HjosugiHub.RendererTest do
       assert index =~ ~s(<meta property="og:url" content="https://example.com/hub/">)
       assert radar =~ ~s(<meta property="og:url" content="https://example.com/hub/radar/">)
       assert popular =~ ~s(<meta property="og:url" content="https://example.com/hub/popular/">)
+      assert digest =~ ~s(<meta property="og:url" content="https://example.com/hub/digest/">)
       assert friends =~ ~s(<meta property="og:url" content="https://example.com/hub/friends/">)
       assert not_found =~ ~s(<meta property="og:url" content="https://example.com/hub/404.html">)
 
@@ -283,7 +288,82 @@ defmodule HjosugiHub.RendererTest do
       assert og_image =~ "test-hub"
       assert sitemap =~ "https://example.com/hub/radar/"
       assert sitemap =~ "https://example.com/hub/popular/"
+      assert sitemap =~ "https://example.com/hub/digest/"
       assert sitemap =~ "https://example.com/hub/friends/"
+    after
+      File.rm_rf(out_dir)
+    end
+  end
+
+  test "export writes digest page ranked by score times weight" do
+    out_dir =
+      Path.join(System.tmp_dir!(), "hjosugi-hub-renderer-#{System.unique_integer([:positive])}")
+
+    site = %{
+      handle: "test-hub",
+      display_name: "Test Hub",
+      headline: "A test site",
+      location: "Tokyo, Japan",
+      about: "Testing the static export.",
+      links: [],
+      projects: [],
+      skills: []
+    }
+
+    feeds = [
+      %{
+        id: "hacker-news",
+        name: "Hacker News",
+        url: "https://example.com/hn.xml",
+        kind: "aggregator",
+        enabled: true,
+        tags: []
+      },
+      %{
+        id: "boosted",
+        name: "Boosted Feed",
+        url: "https://example.com/boosted.xml",
+        kind: "newsletter",
+        weight: 2.0,
+        enabled: true,
+        tags: []
+      }
+    ]
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    items = [
+      digest_item("boosted-top", "boosted", "Boosted score", 40, DateTime.add(now, -60, :second)),
+      digest_item("fresh-tie", "hacker-news", "Fresh tie", 50, DateTime.add(now, -120, :second)),
+      digest_item("older-tie", "hacker-news", "Older tie", 50, DateTime.add(now, -240, :second)),
+      digest_item("low", "hacker-news", "Low weighted", 10, DateTime.add(now, -300, :second)),
+      digest_item("nil-score", "boosted", "Nil score", nil, DateTime.add(now, -360, :second)),
+      digest_item(
+        "too-old",
+        "boosted",
+        "Too old",
+        200,
+        DateTime.add(now, -29 * 24 * 60 * 60, :second)
+      )
+    ]
+
+    try do
+      assert :ok = Renderer.export(site, feeds, items, out_dir, "https://example.com/hub/")
+
+      digest = File.read!(Path.join(out_dir, "digest/index.html"))
+
+      assert digest =~ "<title>Weekly digest - test-hub</title>"
+      assert digest =~ ~s(<a class="nav-link active" href="../digest/">digest/</a>)
+      assert digest =~ "Top radar items ranked by score * feed weight"
+      assert digest =~ "Items without a numeric score are excluded from digest rankings"
+      assert digest =~ "Last 7 days"
+      assert digest =~ "score 40 * weight 2"
+      assert digest =~ "score 50 * weight 1.3"
+      assert digest =~ ~s(title="score * feed weight">80</span>)
+      assert digest =~ ~s(title="score * feed weight">65</span>)
+      assert_in_order(digest, ["Boosted score", "Fresh tie", "Older tie", "Low weighted"])
+      refute digest =~ "Nil score"
+      refute digest =~ "Too old"
     after
       File.rm_rf(out_dir)
     end
@@ -309,6 +389,7 @@ defmodule HjosugiHub.RendererTest do
 
       index = File.read!(Path.join(out_dir, "index.html"))
       radar = File.read!(Path.join(out_dir, "radar/index.html"))
+      digest = File.read!(Path.join(out_dir, "digest/index.html"))
       atom = File.read!(Path.join(out_dir, "radar.xml"))
       decoded_feed = JSON.decode!(File.read!(Path.join(out_dir, "feed.json")))
 
@@ -316,6 +397,9 @@ defmodule HjosugiHub.RendererTest do
                ~s(<link rel="alternate" type="application/atom+xml" title="test-hub radar Atom feed" href="radar.xml">)
 
       assert radar =~
+               ~s(<link rel="alternate" type="application/atom+xml" title="test-hub radar Atom feed" href="../radar.xml">)
+
+      assert digest =~
                ~s(<link rel="alternate" type="application/atom+xml" title="test-hub radar Atom feed" href="../radar.xml">)
 
       assert index =~ ~s(<meta property="og:title" content="test-hub - A test site">)
@@ -332,5 +416,31 @@ defmodule HjosugiHub.RendererTest do
     after
       File.rm_rf(out_dir)
     end
+  end
+
+  defp digest_item(id, source_id, title, score, published_at) do
+    %Item{
+      id: id,
+      source_id: source_id,
+      source_name: source_id,
+      source_kind: "aggregator",
+      title: title,
+      url: "https://example.com/#{id}",
+      summary: "#{title} summary",
+      published_at: published_at,
+      collected_at: published_at,
+      score: score,
+      tags: ["digest"]
+    }
+  end
+
+  defp assert_in_order(content, labels) do
+    positions =
+      Enum.map(labels, fn label ->
+        {position, _length} = :binary.match(content, label)
+        position
+      end)
+
+    assert positions == Enum.sort(positions)
   end
 end
