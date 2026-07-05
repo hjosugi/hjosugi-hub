@@ -1,5 +1,10 @@
 defmodule HjosugiHub.FeedParser do
-  @moduledoc false
+  @moduledoc """
+  RSS and Atom parser that turns feed XML into normalized items.
+
+  It extracts links, authors, categories, dates, score hints, and content from
+  feed documents, while leaving HTTP retrieval to `HjosugiHub.Fetcher`.
+  """
 
   require Record
 

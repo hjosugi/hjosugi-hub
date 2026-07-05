@@ -1,5 +1,11 @@
 defmodule HjosugiHub.Collector do
-  @moduledoc false
+  @moduledoc """
+  Collection pipeline for enabled feeds.
+
+  It fetches feeds concurrently with retries and conditional validators, merges
+  new items into the cache, updates feed health state, and returns a report for
+  export/status checks.
+  """
 
   alias HjosugiHub.{Fetcher, Store}
 

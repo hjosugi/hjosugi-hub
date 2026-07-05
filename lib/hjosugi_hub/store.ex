@@ -1,5 +1,11 @@
 defmodule HjosugiHub.Store do
-  @moduledoc false
+  @moduledoc """
+  Persistence and projection layer for cached radar data.
+
+  It reads and writes term/JSON files, normalizes older item and feed-state
+  shapes, merges collected items, and converts internal items into public maps
+  for rendering.
+  """
 
   alias HjosugiHub.{Item, JSON, Util}
 

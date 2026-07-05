@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Util do
-  @moduledoc false
+  @moduledoc """
+  Normalization helpers shared across collection, storage, and rendering.
+
+  This module handles stable IDs, URL/text/date/tag normalization, summary
+  trimming, and item time fallback. It does not perform file or network I/O.
+  """
 
   @tag_trim ~r/[-\/#]+$/u
   @html_decode_passes 2

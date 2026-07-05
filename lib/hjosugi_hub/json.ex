@@ -1,5 +1,10 @@
 defmodule HjosugiHub.JSON do
-  @moduledoc false
+  @moduledoc """
+  JSON encoder wrapper for deterministic public data output.
+
+  Map values with `nil` are omitted, object keys are sorted, structs are encoded
+  through maps, and scalar values are delegated to `Elixir.JSON`.
+  """
 
   def encode!(value), do: JSON.encode!(value, &encode_value/2)
 

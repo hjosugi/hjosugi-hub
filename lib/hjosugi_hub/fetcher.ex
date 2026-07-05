@@ -1,5 +1,12 @@
 defmodule HjosugiHub.Fetcher do
-  @moduledoc false
+  @moduledoc """
+  Default HTTP RSS/Atom fetcher for the collector.
+
+  It uses Erlang `:httpc` with TLS verification, conditional request headers,
+  streaming size limits, and parser handoff, returning status and validator
+  metadata for feed-state tracking.
+  """
+
   @behaviour HjosugiHub.Fetcher.Behaviour
 
   alias HjosugiHub.FeedParser

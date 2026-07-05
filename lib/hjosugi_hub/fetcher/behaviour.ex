@@ -1,5 +1,11 @@
 defmodule HjosugiHub.Fetcher.Behaviour do
-  @moduledoc false
+  @moduledoc """
+  Contract for feed fetchers used by `HjosugiHub.Collector`.
+
+  Fetchers return parsed `HjosugiHub.Item` structs with response status codes.
+  Implementations may also support conditional request validators for
+  cache-aware polling.
+  """
 
   @callback fetch(map(), non_neg_integer()) ::
               {:ok, [HjosugiHub.Item.t()], non_neg_integer()}

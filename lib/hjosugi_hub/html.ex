@@ -1,5 +1,10 @@
 defmodule HjosugiHub.HTML do
-  @moduledoc false
+  @moduledoc """
+  Minimal escaping helper for generated HTML and XML fragments.
+
+  It escapes dynamic text for attributes and text nodes assembled outside the
+  static EEx templates.
+  """
 
   def escape(nil), do: ""
 

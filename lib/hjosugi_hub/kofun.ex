@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Kofun do
-  @moduledoc false
+  @moduledoc """
+  Pixel-art asset generator for the Kofun mascot.
+
+  The module keeps the 16x16 source grid in Elixir and exposes SVG snippets for
+  page sprites, gallery poses, and favicon generation.
+  """
 
   # Single source of truth for the 前方後円墳 (keyhole-tomb) pixel mascot.
   # The same 16x16 grid feeds both the in-page sprite and the favicon, so the

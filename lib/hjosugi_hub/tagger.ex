@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Tagger do
-  @moduledoc false
+  @moduledoc """
+  Keyword-based topic tag inference for collected feed items.
+
+  It merges configured seed tags with detected technical topics and returns a
+  compact, normalized tag list for display and public data export.
+  """
 
   alias HjosugiHub.Util
 

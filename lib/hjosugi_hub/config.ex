@@ -1,5 +1,11 @@
 defmodule HjosugiHub.Config do
-  @moduledoc false
+  @moduledoc """
+  Loader and validator for site and feed configuration files.
+
+  It evaluates trusted local config files, enforces the data shape used by
+  collection/rendering, and exposes presentation helpers such as avatar URLs
+  and feed weights.
+  """
 
   def site(path \\ "config/site.exs"), do: load!(path, :site)
   def feeds(path \\ "config/feeds.exs"), do: load!(path, :feeds)

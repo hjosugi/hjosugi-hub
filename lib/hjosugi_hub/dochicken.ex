@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Dochicken do
-  @moduledoc false
+  @moduledoc """
+  Pixel-art asset generator for the Dochicken gallery mascot.
+
+  The layered 16x16 sprite definition lives in Elixir and is exposed as SVG for
+  named gallery poses.
+  """
 
   # ドチキンさん: a chicken-shaped 埴輪 (haniwa, terracotta figure). Like Kofun,
   # the artwork is a 16x16 pixel grid defined once here; CSS scales and animates

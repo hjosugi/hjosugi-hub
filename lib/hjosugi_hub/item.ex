@@ -1,5 +1,10 @@
 defmodule HjosugiHub.Item do
-  @moduledoc false
+  @moduledoc """
+  Struct for normalized collected feed entries.
+
+  Items carry source metadata, cleaned text, timestamps, score hints, and tags
+  before `HjosugiHub.Store` projects them into public JSON-friendly maps.
+  """
 
   @type t :: %__MODULE__{
           id: String.t() | nil,

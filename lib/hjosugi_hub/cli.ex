@@ -1,5 +1,10 @@
 defmodule HjosugiHub.CLI do
-  @moduledoc false
+  @moduledoc """
+  Shared command-line helpers for the hub Mix tasks.
+
+  This module centralizes strict option parsing, the legacy `--data` to
+  `--cache` compatibility path, and simple environment integer defaults.
+  """
 
   @data_deprecation "warning: --data is deprecated; use --cache instead"
 
