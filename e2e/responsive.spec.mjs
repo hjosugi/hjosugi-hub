@@ -92,6 +92,24 @@ test("popular is a separate page scoped to github.com links", async ({ page }) =
   }
 });
 
+test("nav is not a horizontally draggable strip", async ({ page }) => {
+  // The top menu must not scroll sideways: a scrollable nav let the whole menu
+  // be dragged on a phone. It should wrap instead, so scrollWidth never exceeds
+  // the visible width.
+  await page.goto("/popular/", { waitUntil: "networkidle" });
+  await page.waitForSelector(".radar-card");
+  const overflow = await page.locator("nav").evaluate((el) => ({
+    scroll: el.scrollWidth,
+    client: el.clientWidth,
+    overflowX: getComputedStyle(el).overflowX,
+  }));
+  expect(overflow.overflowX).not.toBe("auto");
+  expect(overflow.overflowX).not.toBe("scroll");
+  expect(overflow.scroll, "nav content overflows and can be dragged").toBeLessThanOrEqual(
+    overflow.client + 1,
+  );
+});
+
 test("nav exposes radar and popular as separate pages", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(page.locator('nav a[href="radar/"]')).toHaveCount(1);
