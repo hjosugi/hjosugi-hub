@@ -338,8 +338,11 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 .footer-grid { min-height: 92px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 
 @media (max-width: 820px) {
-  .nav-shell { gap: 14px; }
-  nav { gap: 12px; overflow-x: auto; }
+  .nav-shell { gap: 14px; flex-wrap: wrap; }
+  /* Wrap the links onto a second row instead of turning the nav into a
+     horizontally scrollable strip — a scroll container let the whole menu be
+     dragged sideways on a phone. */
+  nav { gap: 12px; flex-wrap: wrap; }
   .crt-toggle { display: none; }
   .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .status-strip div:nth-child(2) { border-right: 0; }
