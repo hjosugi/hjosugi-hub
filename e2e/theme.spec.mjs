@@ -40,29 +40,31 @@ test("theme toggle defaults dark, switches to light, and persists", async ({ pag
 
   await expect(root).toHaveAttribute("data-theme", "dark");
   await expect(toggle).toBeVisible();
-  await expect(toggle).toHaveText("theme:dark");
+  await expect(toggle).toHaveText("☾");
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
   await expect(toggle).toHaveAttribute("aria-label", "Switch to light theme");
+  await expect(toggle).toHaveAttribute("title", "theme:dark");
 
   await toggle.click();
   const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
   await expect(root).toHaveAttribute("data-theme", "light");
-  await expect(toggle).toHaveText("theme:light");
+  await expect(toggle).toHaveText("☀");
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
   await expect(toggle).toHaveAttribute("aria-label", "Switch to dark theme");
+  await expect(toggle).toHaveAttribute("title", "theme:light");
   expect(lightBg).not.toBe(darkBg);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("hjosugi-hub-theme"))).toBe("light");
 
   await page.goto("/radar/", { waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");
   await expect(root).toHaveAttribute("data-theme", "light");
-  await expect(toggle).toHaveText("theme:light");
+  await expect(toggle).toHaveText("☀");
 
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForSelector(".radar-card");
   await expect(root).toHaveAttribute("data-theme", "light");
-  await expect(toggle).toHaveText("theme:light");
+  await expect(toggle).toHaveText("☀");
 });
 
 test("light theme does not introduce horizontal overflow", async ({ page }, testInfo) => {
