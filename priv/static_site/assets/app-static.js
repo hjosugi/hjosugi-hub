@@ -27,9 +27,10 @@
     root.dataset.theme = theme;
 
     if (themeToggle) {
-      themeToggle.textContent = `theme:${theme}`;
+      themeToggle.textContent = theme === "light" ? "☀" : "☾";
       themeToggle.setAttribute("aria-pressed", String(theme === "light"));
       themeToggle.setAttribute("aria-label", `Switch to ${theme === "light" ? "dark" : "light"} theme`);
+      themeToggle.setAttribute("title", `theme:${theme}`);
     }
   }
 

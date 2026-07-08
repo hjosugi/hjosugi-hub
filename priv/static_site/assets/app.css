@@ -148,6 +148,7 @@ nav { display: flex; gap: 20px; margin-left: auto; }
   padding: 6px 0;
 }
 .ghost-button:hover, .text-button:hover { color: var(--accent); }
+.theme-toggle { font-size: 1.15rem; line-height: 1; padding: 6px; }
 
 .hero { padding: 72px 0 64px; }
 .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.04em; }
@@ -365,7 +366,12 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 @media (max-width: 560px) {
   .shell { width: min(100% - 22px, 1120px); }
   .site-header nav .nav-link:nth-child(n+4) { display: none; }
-  .theme-toggle { font-size: 0.78rem; }
+  /* Keep the menu bar on a single row on phones: drop the brand title, stop
+     the header and nav from wrapping, and let the icon toggle sit at the end. */
+  .brand { display: none; }
+  .nav-shell { flex-wrap: nowrap; gap: 12px; }
+  nav { flex-wrap: nowrap; gap: 16px; margin-left: 0; }
+  .theme-toggle { margin-left: auto; }
   .hero { padding: 28px 0 28px; }
   .inbox-shell { padding-top: 22px; }
   .gallery-shell { padding-top: 22px; }
