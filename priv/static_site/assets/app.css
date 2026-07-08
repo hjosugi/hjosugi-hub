@@ -366,9 +366,11 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 @media (max-width: 560px) {
   .shell { width: min(100% - 22px, 1120px); }
   .site-header nav .nav-link:nth-child(n+4) { display: none; }
-  /* Keep the menu bar on a single row on phones: drop the brand title, stop
-     the header and nav from wrapping, and let the icon toggle sit at the end. */
-  .brand { display: none; }
+  /* Keep the menu bar on a single row on phones: drop the handle text but keep
+     the "~/" prompt as the home link, stop the header and nav from wrapping,
+     and let the icon toggle sit at the end. */
+  .brand-handle { display: none; }
+  .brand .prompt { margin-right: 0; }
   .nav-shell { flex-wrap: nowrap; gap: 12px; }
   nav { flex-wrap: nowrap; gap: 16px; margin-left: 0; }
   .theme-toggle { margin-left: auto; }
