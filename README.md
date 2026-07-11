@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # Hjosugi Hub
 
 An Elixir-powered static portfolio and public technical radar.

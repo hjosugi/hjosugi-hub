@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # Hjosugi Hub
 
 自己紹介ポートフォリオと、技術情報収集・検索ページを1つにしたElixirプロジェクトです。

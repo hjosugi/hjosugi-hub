@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](architecture.md) | [日本語](architecture.ja.md)
+
 # Hjosugi Hub Architecture
 
 Hjosugi Hub is a static-site pipeline. Elixir runs during local development and
