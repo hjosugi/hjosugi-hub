@@ -7,6 +7,9 @@ defmodule HjosugiHub.RendererTest do
     out_dir =
       Path.join(System.tmp_dir!(), "hjosugi-hub-renderer-#{System.unique_integer([:positive])}")
 
+    collected_at = DateTime.utc_now() |> DateTime.truncate(:second)
+    published_at = DateTime.add(collected_at, -3600, :second)
+
     site = %{
       handle: "test-hub",
       display_name: "Test Hub",
@@ -56,8 +59,8 @@ defmodule HjosugiHub.RendererTest do
         url: "https://example.com/item",
         summary: "A summary",
         content: "Long searchable body content",
-        published_at: ~U[2026-06-20 12:00:00Z],
-        collected_at: ~U[2026-06-20 13:00:00Z],
+        published_at: published_at,
+        collected_at: collected_at,
         tags: ["elixir"]
       },
       %Item{
@@ -68,8 +71,8 @@ defmodule HjosugiHub.RendererTest do
         title: "Private source link",
         url: "https://example.com/private",
         summary: "Should not be exported",
-        published_at: ~U[2026-06-20 12:00:00Z],
-        collected_at: ~U[2026-06-20 13:00:00Z],
+        published_at: published_at,
+        collected_at: collected_at,
         tags: []
       },
       %Item{
@@ -80,8 +83,8 @@ defmodule HjosugiHub.RendererTest do
         title: "Disabled source link",
         url: "https://example.com/disabled",
         summary: "Should not be exported",
-        published_at: ~U[2026-06-20 12:00:00Z],
-        collected_at: ~U[2026-06-20 13:00:00Z],
+        published_at: published_at,
+        collected_at: collected_at,
         tags: []
       },
       %Item{
@@ -92,8 +95,8 @@ defmodule HjosugiHub.RendererTest do
         title: "Deleted source link",
         url: "https://example.com/deleted",
         summary: "Should not be exported",
-        published_at: ~U[2026-06-20 12:00:00Z],
-        collected_at: ~U[2026-06-20 13:00:00Z],
+        published_at: published_at,
+        collected_at: collected_at,
         tags: []
       }
     ]
@@ -286,7 +289,7 @@ defmodule HjosugiHub.RendererTest do
       assert feed_item["url"] == "https://example.com/item"
       assert feed_item["summary"] == "A summary"
       assert feed_item["content_text"] == "A summary"
-      assert feed_item["date_published"] == "2026-06-20T12:00:00Z"
+      assert feed_item["date_published"] == DateTime.to_iso8601(published_at)
       assert feed_item["tags"] == ["elixir"]
       refute json_feed =~ "Private source link"
       refute json_feed =~ "Disabled source link"

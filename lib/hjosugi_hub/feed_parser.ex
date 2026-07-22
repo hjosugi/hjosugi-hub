@@ -22,12 +22,6 @@ defmodule HjosugiHub.FeedParser do
   Record.defrecordp(:xmlElement, @xml_element_fields)
   Record.defrecordp(:xmlText, @xml_text_fields)
 
-  @score_patterns [
-    ~r/\bpoints:\s*(\d+)\b(?!,)/i,
-    ~r/(?<![\w,])(\d+)\b(?!,)\s+points?\b/i,
-    ~r/(?<![\w,])(\d+)\b(?!,)\s+comments?\b/i
-  ]
-
   def parse(body, feed, now \\ DateTime.utc_now()) do
     document = parse_xml(body)
     feed_element = first_element([document | descendant_elements(document, "feed")], "feed")
@@ -152,12 +146,20 @@ defmodule HjosugiHub.FeedParser do
   defp extract_score(raw) do
     text = Util.clean_text(raw)
 
-    Enum.find_value(@score_patterns, fn pattern ->
+    Enum.find_value(score_patterns(), fn pattern ->
       case Regex.run(pattern, text) do
         [_, digits] -> String.to_integer(digits)
         _ -> nil
       end
     end)
+  end
+
+  defp score_patterns do
+    [
+      ~r/\bpoints:\s*(\d+)\b(?!,)/i,
+      ~r/(?<![\w,])(\d+)\b(?!,)\s+points?\b/i,
+      ~r/(?<![\w,])(\d+)\b(?!,)\s+comments?\b/i
+    ]
   end
 
   defp atom_link(entry, base_url) do
