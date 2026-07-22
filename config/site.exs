@@ -8,7 +8,8 @@
     "I mess around with little tools, prototypes, and half-finished ideas in my spare time. Backend, a bit of frontend, whatever I feel like that week. Nothing too serious — I just like building things and seeing if they work.",
   email: "",
   links: [
-    %{label: "GitHub", url: "https://github.com/hjosugi"}
+    %{label: "GitHub", url: "https://github.com/hjosugi"},
+    %{label: "Avishai Kofun", url: "https://avishaikofun.com/"}
   ],
   projects: [
     %{
