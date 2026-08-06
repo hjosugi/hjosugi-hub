@@ -132,7 +132,7 @@ test("about page renders its project and skill sections opaquely", async ({ page
   await page.goto("/", { waitUntil: "networkidle" });
   expect(await page.locator(".project-card").count()).toBeGreaterThan(0);
   expect(await page.locator(".skill-group").count()).toBeGreaterThan(0);
-  await expect(page.locator('.project-card h3 a[href="https://github.com/hjosugi/irodori-table"]')).toHaveText("Irodori Table");
+  await expect(page.locator('.project-card h3 a[href="https://github.com/irodori-table/irodori-table"]')).toHaveText("Irodori Table");
   await expect(page.locator('.project-card a[href="https://hjosugi.github.io/irodori-docs/"]')).toHaveText("docs");
   await expect(page.locator('.project-card h3 a[href="https://github.com/hjosugi/sql-dialect-fmt"]')).toHaveText("sql-dialect-fmt");
   // toBeVisible() ignores opacity, so assert the reveal fade is actually
