@@ -69,8 +69,8 @@
     },
     %{
       name: "Ayame Editor",
-      url: "https://github.com/hjosugi/ayame-editor",
-      docs_url: "https://hjosugi.github.io/ayame-editor/",
+      url: "https://github.com/ayame-editor/ayame-editor",
+      docs_url: "https://ayame-editor.github.io/ayame-editor/",
       summary:
         "A fast desktop text editor for very large files. It pairs a Rust core with a local web UI and optional native window so huge text files can open, search, and edit without pretending they are small.",
       stack: ["Rust", "Axum", "TypeScript", "Wry", "WebView", "CLI"],
