@@ -47,6 +47,7 @@ defmodule HjosugiHub.ConfigTest do
         url: "https://github.com/hjosugi/example",
         docs_url: "https://example.com/docs",
         demo_url: "",
+        store_url: "https://chromewebstore.google.com/detail/example",
         summary: "An example project.",
         stack: ["Elixir"],
         highlights: ["Static export"],
@@ -135,6 +136,7 @@ defmodule HjosugiHub.ConfigTest do
             %{
               name: "Bad Project",
               url: "not-a-url",
+              store_url: "ftp://example.com/item",
               summary: "Malformed project.",
               stack: "Elixir",
               highlights: ["ok", 1],
@@ -153,6 +155,9 @@ defmodule HjosugiHub.ConfigTest do
 
     assert error.message =~
              "site.exs :projects entry 1 (name: Bad Project) :url must be an http(s) URL."
+
+    assert error.message =~
+             "site.exs :projects entry 1 (name: Bad Project) :store_url must be an http(s) URL."
 
     assert error.message =~
              "site.exs :projects entry 1 (name: Bad Project) :stack must be a list of strings."

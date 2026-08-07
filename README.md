@@ -41,7 +41,10 @@ as CI artifacts by the `e2e` job in [`.github/workflows/ci.yml`](.github/workflo
 
 ## Configuration
 
-- `config/site.exs`: profile, links, skills, and selected projects
+- `config/site.exs`: profile, links, skills, and selected projects. Each project
+  takes a required `url` plus optional `docs_url`, `demo_url`, and `store_url`
+  links, rendered on the project card as `source`, `docs`, `live demo`, and
+  `chrome web store`.
 - `config/feeds.exs`: RSS/Atom/YouTube feed sources
 - `radar-cache/`: generated local collection cache, ignored by Git
 - `radar-data/items.sample.json`: sample public radar JSON payload
