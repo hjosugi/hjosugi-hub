@@ -69,6 +69,7 @@
           <a href="<%= HTML.escape(project.url) %>" target="_blank" rel="noopener">source</a>
           <%= if Map.get(project, :docs_url, "") != "" do %><a href="<%= HTML.escape(project.docs_url) %>" target="_blank" rel="noopener">docs</a><% end %>
           <%= if Map.get(project, :demo_url, "") != "" do %><a href="<%= HTML.escape(project.demo_url) %>" target="_blank" rel="noopener">live demo</a><% end %>
+          <%= if Map.get(project, :store_url, "") != "" do %><a href="<%= HTML.escape(project.store_url) %>" target="_blank" rel="noopener">chrome web store</a><% end %>
         </div>
       </article>
       <% end %>

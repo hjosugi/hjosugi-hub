@@ -235,7 +235,7 @@ defmodule HjosugiHub.Config do
     required_key_errors(project, [:name, :url, :summary, :stack, :highlights], context)
     |> Kernel.++(required_string_errors(project, [:name, :url, :summary], context))
     |> Kernel.++(url_field_errors(project, :url, context))
-    |> Kernel.++(optional_url_field_errors(project, [:docs_url, :demo_url], context))
+    |> Kernel.++(optional_url_field_errors(project, [:docs_url, :demo_url, :store_url], context))
     |> Kernel.++(string_list_field_errors(project, [:stack, :highlights], context))
     |> Kernel.++(optional_boolean_field_errors(project, :featured, context))
   end

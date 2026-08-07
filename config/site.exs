@@ -57,13 +57,14 @@
     %{
       name: "Smart YouTube Comment",
       url: "https://github.com/hjosugi/smart-youtube-comment",
+      store_url: "https://chromewebstore.google.com/detail/nkphcfhnfjceplpgcjccnpfdkheafohp",
       summary:
-        "A Chrome extension prototype that overlays YouTube live chat niconico-style (danmaku). It scores each comment locally in JavaScript, so useful messages drift by slowly while emoji floods and spam zip past.",
+        "A Chrome extension, now on the Chrome Web Store, that overlays YouTube live chat niconico-style (danmaku). It scores each comment locally in JavaScript, so useful messages drift by slowly while emoji floods and spam zip past.",
       stack: ["JavaScript", "Chrome MV3", "Canvas", "danmaku"],
       highlights: [
+        "Published on the Chrome Web Store, with releases cut straight from a Git tag.",
         "Local scoring only — no remote code, no WASM.",
-        "Extracts chat from every frame and renders over the player on a canvas.",
-        "Just a fun experiment in keeping the good comments readable."
+        "Extracts chat from every frame and renders over the player on a canvas."
       ],
       featured: true
     },
