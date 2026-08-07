@@ -15,7 +15,7 @@
     %{
       name: "Irodori Table",
       url: "https://github.com/irodori-table/irodori-table",
-      docs_url: "https://hjosugi.github.io/irodori-docs/",
+      docs_url: "https://irodori-table.github.io/irodori-docs/",
       summary:
         "A Tauri desktop database client I am building around Rust, React, and TypeScript. The main repo keeps the app, shared crates, extension SDK work, sample database tooling, and release automation together.",
       stack: ["Rust", "Tauri", "React", "TypeScript", "Vite", "SQL"],
