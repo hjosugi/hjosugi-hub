@@ -20,3 +20,8 @@ e2e/screenshots/
 e2e/.output/
 playwright-report/
 test-results/
+.claude/skills/graphify/
+.copilot/skills/graphify/
+.codex/skills/graphify/
+.codex/hooks.json
+graphify-out/
