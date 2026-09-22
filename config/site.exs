@@ -43,7 +43,7 @@
     %{
       name: "Mail Lookout",
       url: "https://github.com/hjosugi/mail-lookout",
-      demo_url: "https://mail-lookout.netlify.app/",
+      demo_url: "https://avishaikofun.com/",
       summary:
         "A small Outlook add-in that double-checks recipients, attachments, and the subject and body before you hit send — so you do not fire off the wrong email to the wrong person.",
       stack: ["TypeScript", "Office.js", "Bun", "Vite", "Vitest"],
