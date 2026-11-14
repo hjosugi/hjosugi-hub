@@ -177,6 +177,17 @@ defmodule HjosugiHub.RendererTest do
       assert popular =~ ~s(href="../feeds.opml")
       assert digest =~ ~s(href="../feeds.opml")
       assert radar =~ ~s(<span>1 feeds</span>)
+
+      # Every page shares one layout; nav state, extra scripts, and the footer
+      # note come from the page's metadata.
+      assert radar =~ ~s(<a class="nav-link active" href="../radar/">radar/</a>)
+      assert popular =~ ~s(<a class="nav-link active" href="../popular/">popular/</a>)
+      refute index =~ "nav-link active"
+      assert index =~ ~s(<a class="brand" href="./")
+      assert radar =~ ~s(src="../static/radar.js?v=)
+      refute friends =~ "radar.js"
+      assert friends =~ "pixel mascots, hand-placed one dot at a time"
+      assert length(String.split(index, "<main")) == 2
       assert Enum.all?(pages, &(&1 =~ ~s(<meta http-equiv="Content-Security-Policy")))
       assert Enum.all?(pages, &(&1 =~ "default-src &#39;self&#39;"))
 

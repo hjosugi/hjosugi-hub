@@ -70,25 +70,4 @@
       }
     }
   });
-
-  // Fade sections in as they scroll into view (skipped for reduced motion).
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!reduceMotion && "IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries, obs) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add("in-view");
-          obs.unobserve(entry.target);
-        }
-      },
-      // Reveal a bit before the section scrolls into view so content appears
-      // with less scrolling instead of popping in late.
-      { threshold: 0, rootMargin: "0px 0px 20% 0px" }
-    );
-    for (const section of document.querySelectorAll(".section")) {
-      section.classList.add("reveal");
-      observer.observe(section);
-    }
-  }
 })();

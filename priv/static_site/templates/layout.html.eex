@@ -1,0 +1,41 @@
+<% alias HjosugiHub.HTML %>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Content-Security-Policy" content="<%= HTML.escape(@content_security_policy) %>">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="<%= HTML.escape(@page.description) %>">
+  <%= social_meta_tags(@page) %>
+  <%= feed_discovery_tags(@page) %>
+  <%= canonical_link_tag(@page) %>
+  <title><%= HTML.escape(@page.title) %></title>
+  <link rel="icon" href="<%= @root %>static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="<%= @root %>static/app.css?v=<%= @asset_version %>">
+  <script defer src="<%= @root %>static/app-static.js?v=<%= @asset_version %>"></script><%= for module <- @page.modules ++ ["pet.js"] do %>
+  <script type="module" src="<%= @root %>static/<%= module %>?v=<%= @asset_version %>"></script><% end %>
+</head>
+<body class="crt">
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="<%= if @root == "", do: "./", else: @root %>" aria-label="Home"><span class="prompt">~/</span><span class="brand-handle"><%= HTML.escape(@site.handle) %></span></a>
+    <nav aria-label="Primary navigation"><%= for {id, path} <- nav_pages() do %>
+      <a class="nav-link<%= if @page.id == id, do: " active" %>" href="<%= @root %><%= path %>"><%= path %></a><% end %>
+      <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
+    </nav>
+    <button class="ghost-button theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light theme" title="theme:dark">☾</button>
+    <button class="ghost-button crt-toggle" id="crt-toggle" type="button" aria-pressed="true">crt:on</button>
+  </div>
+</header>
+<%= @content %>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <p><span class="prompt">$</span> <%= HTML.escape(@page.footer) %></p>
+    <p>&copy; <%= @year %> <%= HTML.escape(@site.handle) %></p>
+  </div>
+</footer>
+<%= @kofun %>
+</body>
+</html>

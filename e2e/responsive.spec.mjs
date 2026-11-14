@@ -2,9 +2,8 @@ import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-// Capture the final design deterministically: the site only skips its
-// scroll-reveal fade (which would leave off-screen sections at opacity:0 in a
-// full-page screenshot) under reduced motion. Set it per page so it applies
+// Capture the design deterministically: reduced motion stops the CRT flicker,
+// the caret blink, and the wandering mascot. Set it per page so it applies
 // before the scripts run.
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -135,8 +134,8 @@ test("about page renders its project and skill sections opaquely", async ({ page
   await expect(page.locator('.project-card h3 a[href="https://github.com/irodori-table/irodori-table"]')).toHaveText("Irodori Table");
   await expect(page.locator('.project-card a[href="https://irodori-table.github.io/irodori-docs/"]')).toHaveText("docs");
   await expect(page.locator('.project-card h3 a[href="https://github.com/hjosugi/sql-dialect-fmt"]')).toHaveText("sql-dialect-fmt");
-  // toBeVisible() ignores opacity, so assert the reveal fade is actually
-  // resolved (sections must not be left at opacity:0).
+  // toBeVisible() ignores opacity, so assert sections are not faded out (a
+  // scroll-reveal effect once left off-screen sections at opacity:0).
   const opacity = await page
     .locator(".section")
     .first()

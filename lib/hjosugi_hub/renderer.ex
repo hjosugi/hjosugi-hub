@@ -11,18 +11,6 @@ defmodule HjosugiHub.Renderer do
   alias HjosugiHub.{Config, HTML, Kofun, Store, Util}
 
   @template_dir Path.expand("../../priv/static_site/templates", __DIR__)
-  @index_template Path.join(@template_dir, "index.html.eex")
-  @radar_template Path.join(@template_dir, "radar.html.eex")
-  @digest_template Path.join(@template_dir, "digest.html.eex")
-  @gallery_template Path.join(@template_dir, "gallery.html.eex")
-  @not_found_template Path.join(@template_dir, "404.html.eex")
-
-  @external_resource @index_template
-  @external_resource @radar_template
-  @external_resource @digest_template
-  @external_resource @gallery_template
-  @external_resource @not_found_template
-
   @asset_dir Path.expand("../../priv/static_site/assets", __DIR__)
   @feed_item_limit 50
   @recent_days 30
@@ -46,11 +34,27 @@ defmodule HjosugiHub.Renderer do
                              "; "
                            )
 
-  EEx.function_from_file(:defp, :index_template, @index_template, [:assigns], [])
-  EEx.function_from_file(:defp, :radar_template, @radar_template, [:assigns], [])
-  EEx.function_from_file(:defp, :digest_template, @digest_template, [:assigns], [])
-  EEx.function_from_file(:defp, :gallery_template, @gallery_template, [:assigns], [])
-  EEx.function_from_file(:defp, :not_found_template, @not_found_template, [:assigns], [])
+  # Pages listed in the primary navigation and the sitemap, as {page id, path}.
+  @nav_pages [radar: "radar/", popular: "popular/", digest: "digest/", friends: "friends/"]
+  @radar_footer "RSS data is refreshed by GitHub Actions"
+
+  # `layout` is the shared document chrome (head, site header, footer); every
+  # other template renders only its page's <main> and is wrapped by it.
+  for {name, file} <- [
+        layout: "layout",
+        index: "index",
+        radar: "radar",
+        digest: "digest",
+        gallery: "gallery",
+        not_found: "404"
+      ] do
+    EEx.function_from_file(
+      :defp,
+      :"#{name}_template",
+      Path.join(@template_dir, "#{file}.html.eex"),
+      [:assigns]
+    )
+  end
 
   def export(site, feeds, items, out_dir, base_url \\ "", opts \\ []) do
     asset_version = asset_version()
@@ -130,8 +134,7 @@ defmodule HjosugiHub.Renderer do
       site: site,
       feeds: feeds,
       enabled_feeds: length(feeds),
-      featured: Enum.filter(Map.get(site, :projects, []), &Map.get(&1, :featured, false)),
-      others: Enum.reject(Map.get(site, :projects, []), &Map.get(&1, :featured, false)),
+      projects: featured_first(Map.get(site, :projects, [])),
       avatar_url: Config.avatar_url(site),
       kofun: Kofun.pet_html(),
       items: public_items,
@@ -141,8 +144,15 @@ defmodule HjosugiHub.Renderer do
       year: now.year,
       base_url: String.trim_trailing(base_url || "", "/"),
       asset_version: asset_version,
-      content_security_policy: @content_security_policy
+      content_security_policy: @content_security_policy,
+      # Relative path back to the site root; pages below the root override it.
+      root: ""
     }
+  end
+
+  defp featured_first(projects) do
+    {featured, others} = Enum.split_with(projects, &Map.get(&1, :featured, false))
+    featured ++ others
   end
 
   defp recent_public_items(public_items, generated_at) do
@@ -187,8 +197,8 @@ defmodule HjosugiHub.Renderer do
 
   defp write_rendered(dir, file, template, assigns) do
     File.mkdir_p!(dir)
-    html = render_template(template, assigns)
-    File.write!(Path.join(dir, file), html)
+    content = template |> render_template(assigns) |> String.trim()
+    File.write!(Path.join(dir, file), layout_template(Map.put(assigns, :content, content)))
   end
 
   defp render_template(:index, assigns), do: index_template(assigns)
@@ -213,8 +223,10 @@ defmodule HjosugiHub.Renderer do
 
   defp page_assigns(assigns, page, overrides \\ %{}) do
     assigns = Map.merge(assigns, overrides)
-    Map.put(assigns, :page, page_metadata(assigns, page))
+    Map.put(assigns, :page, assigns |> page_metadata(page) |> Map.put(:id, page))
   end
+
+  defp nav_pages, do: @nav_pages
 
   defp page_metadata(assigns, :index) do
     site = assigns.site
@@ -222,7 +234,8 @@ defmodule HjosugiHub.Renderer do
     build_page_metadata(assigns, %{
       path: "",
       title: "#{site.handle} - #{site.headline}",
-      description: site_description(site)
+      description: site_description(site),
+      footer: "static export from Elixir config and RSS data"
     })
   end
 
@@ -230,7 +243,9 @@ defmodule HjosugiHub.Renderer do
     build_page_metadata(assigns, %{
       path: "radar/",
       title: "Technical radar - #{assigns.site.handle}",
-      description: radar_description(assigns.site)
+      description: radar_description(assigns.site),
+      footer: @radar_footer,
+      modules: ["radar.js"]
     })
   end
 
@@ -238,7 +253,9 @@ defmodule HjosugiHub.Renderer do
     build_page_metadata(assigns, %{
       path: "popular/",
       title: "Popular on GitHub - #{assigns.site.handle}",
-      description: "GitHub links surfaced on #{assigns.site.handle}'s technical radar."
+      description: "GitHub links surfaced on #{assigns.site.handle}'s technical radar.",
+      footer: @radar_footer,
+      modules: ["radar.js"]
     })
   end
 
@@ -247,7 +264,8 @@ defmodule HjosugiHub.Renderer do
       path: "digest/",
       title: "Weekly digest - #{assigns.site.handle}",
       description:
-        "Top recent radar items ranked by score multiplied by feed weight for #{assigns.site.handle}."
+        "Top recent radar items ranked by score multiplied by feed weight for #{assigns.site.handle}.",
+      footer: "weekly static digest from public radar data"
     })
   end
 
@@ -256,7 +274,8 @@ defmodule HjosugiHub.Renderer do
       path: "friends/",
       title: "friends - #{assigns.site.handle}",
       description:
-        "Meet Kofun-kun and Dochicken-san, the pixel mascots of #{assigns.site.handle}."
+        "Meet Kofun-kun and Dochicken-san, the pixel mascots of #{assigns.site.handle}.",
+      footer: "pixel mascots, hand-placed one dot at a time"
     })
   end
 
@@ -264,12 +283,14 @@ defmodule HjosugiHub.Renderer do
     build_page_metadata(assigns, %{
       path: "404.html",
       title: "404 - #{assigns.site.handle}",
-      description: "Page not found on #{assigns.site.handle}."
+      description: "Page not found on #{assigns.site.handle}.",
+      footer: "GitHub Pages 404"
     })
   end
 
   defp build_page_metadata(assigns, metadata) do
     metadata
+    |> Map.put_new(:modules, [])
     |> Map.put(:url, absolute_url(assigns.base_url, metadata.path))
     |> Map.put(:image_url, absolute_url(assigns.base_url, @og_image_path))
     |> Map.put(:image_alt, "#{Map.get(assigns.site, :display_name, assigns.site.handle)} mascot")
@@ -302,9 +323,7 @@ defmodule HjosugiHub.Renderer do
   defp public_href(%{base_url: base_url}, path) when base_url != "",
     do: absolute_url(base_url, path)
 
-  defp public_href(assigns, path) do
-    Map.get(assigns, :root, "") <> path
-  end
+  defp public_href(assigns, path), do: assigns.root <> path
 
   defp social_meta_tags(page) do
     [
@@ -1008,14 +1027,14 @@ defmodule HjosugiHub.Renderer do
   defp value(_map, _key), do: nil
 
   defp sitemap(base_url) do
+    urls =
+      ["" | Keyword.values(@nav_pages)]
+      |> Enum.map_join("\n", &"  <url><loc>#{base_url}/#{&1}</loc></url>")
+
     """
     <?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      <url><loc>#{base_url}/</loc></url>
-      <url><loc>#{base_url}/radar/</loc></url>
-      <url><loc>#{base_url}/popular/</loc></url>
-      <url><loc>#{base_url}/digest/</loc></url>
-      <url><loc>#{base_url}/friends/</loc></url>
+    #{urls}
     </urlset>
     """
     |> String.trim_leading()
