@@ -45,8 +45,20 @@ into a report, and preserves feed state for conditional requests.
 `HjosugiHub.Store` is the cache and JSON boundary. It reads legacy cache entries
 safely, merges items by stable id, sorts them, and writes public JSON.
 
-`HjosugiHub.Renderer` turns site config and public items into HTML, JSON, CSP,
-asset versions, `health.json`, `robots.txt`, and `sitemap.xml`.
+`HjosugiHub.Renderer` is the export entry point. It renders the page templates
+inside the shared layout and writes them with the public radar JSON, CSP, asset
+versions, `robots.txt`, and `sitemap.xml`. The data behind the other outputs
+comes from three modules it calls:
+
+- `HjosugiHub.Syndication` builds the Atom feed, the JSON Feed, and the OPML
+  list of followed sources.
+- `HjosugiHub.Digest` ranks scored items into the weekly windows shown on
+  `/digest/`.
+- `HjosugiHub.Health` summarizes the export and the last collection run as
+  `health.json`.
+
+`HjosugiHub.PublicItem` holds the display fallbacks (title, summary, tags) that
+the feeds and the digest share.
 
 `HjosugiHub.HTML`, `HjosugiHub.JSON`, `HjosugiHub.Util`, and
 `HjosugiHub.Tagger` are pure helpers for escaping, encoding, text cleanup, stable

@@ -1,13 +1,11 @@
 <% alias HjosugiHub.{HTML, Kofun, Dochicken} %>
 <main class="shell page-shell">
-  <section class="page-header">
-    <div>
-      <p class="terminal-line"><span class="prompt">$</span> ls ~/friends</p>
-      <h1>Kofun-kun &amp; friends</h1>
-      <p class="lede" lang="en">The little pixel characters that wander around this site — meet the <a href="<%= @root %>">kofun pet</a> and his friends.</p>
-      <p class="lede" lang="ja">このサイトをうろちょろしているドット絵キャラたち。クリックで挨拶してくれる<a href="<%= @root %>">古墳のペット</a>と、その仲間を紹介します。</p>
-    </div>
-  </section>
+  <header class="page-header">
+    <p class="terminal-line"><span class="prompt">$</span> ls ~/friends</p>
+    <h1>Kofun-kun &amp; friends</h1>
+    <p class="lede" lang="en">The little pixel characters that wander around this site — meet the <a href="<%= @root %>">kofun pet</a> and his friends.</p>
+    <p class="lede" lang="ja">このサイトをうろちょろしているドット絵キャラたち。クリックで挨拶してくれる<a href="<%= @root %>">古墳のペット</a>と、その仲間を紹介します。</p>
+  </header>
 
   <article class="char-card">
     <div class="char-stage char-kofun">

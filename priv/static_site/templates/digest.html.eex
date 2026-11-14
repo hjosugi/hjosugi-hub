@@ -1,27 +1,17 @@
-<% alias HjosugiHub.HTML %>
+<% alias HjosugiHub.{Digest, HTML} %>
 <main class="shell page-shell">
-  <section class="page-header">
-    <div>
-      <p class="terminal-line"><span class="prompt">$</span> mix hub.digest --window weekly</p>
-      <h1>Weekly digest</h1>
-      <p class="page-meta">Top radar items ranked by score * feed weight / rebuilt <%= HTML.escape(@generated_text) %></p>
-    </div>
-    <div class="runtime-panel">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>static</span>
-      <span>/</span>
-      <span><%= @enabled_feeds %> feeds</span>
-      <span>/</span>
-      <a href="<%= @root %>feeds.opml">feeds.opml</a>
-    </div>
-  </section>
+  <header class="page-header">
+    <p class="terminal-line"><span class="prompt">$</span> mix hub.digest --window weekly</p>
+    <h1>Weekly digest</h1>
+    <p class="note">Top radar items ranked by score * feed weight / <a href="<%= @root %>feeds.opml"><%= @enabled_feeds %> feeds</a> / rebuilt <%= HTML.escape(@generated_text) %></p>
+  </header>
 
   <section class="results" aria-labelledby="digest-ranking">
     <div class="results-topline">
       <p id="digest-ranking">Recent scored items only. Ties fall back to score, time, title, source, and id.</p>
       <a href="<%= @root %>radar/">open radar</a>
     </div>
-    <p class="static-note">Items without a numeric score are excluded from digest rankings because the ranking is score * feed weight. They still appear in the radar index.</p>
+    <p class="note">Items without a numeric score are excluded from digest rankings because the ranking is score * feed weight. They still appear in the radar index.</p>
 
     <%= if @digest_sections == [] do %>
     <div class="empty-state">
@@ -33,7 +23,7 @@
       <%= for section <- @digest_sections do %>
       <section class="digest-week" aria-labelledby="digest-section-<%= section.index %>">
         <h2 id="digest-section-<%= section.index %>"><%= HTML.escape(section.label) %></h2>
-        <p class="static-note"><%= HTML.escape(section.period) %> / top <%= length(section.items) %></p>
+        <p class="note"><%= HTML.escape(section.period) %> / top <%= length(section.items) %></p>
 
         <%= for entry <- section.items do %>
         <article class="radar-card">
@@ -41,7 +31,7 @@
             <span>#<%= entry.rank %></span>
             <span><%= HTML.escape(entry.item_date) %></span>
             <span><%= HTML.escape(entry.source_name) %></span>
-            <span class="radar-score" title="score * feed weight"><%= HTML.escape(format_digest_number(entry.rank_score)) %></span>
+            <span class="radar-score" title="score * feed weight"><%= HTML.escape(Digest.format_number(entry.rank_score)) %></span>
           </div>
           <h3>
             <%= if entry.url != "" do %>
@@ -53,7 +43,7 @@
           <%= if entry.summary != "" do %><p><%= HTML.escape(entry.summary) %></p><% end %>
           <div class="radar-footer">
             <div class="chip-row"><%= for tag <- entry.tags do %><span class="chip"><%= HTML.escape(tag) %></span><% end %></div>
-            <span>score <%= HTML.escape(format_digest_number(entry.score)) %> * weight <%= HTML.escape(format_digest_number(entry.weight)) %></span>
+            <span>score <%= HTML.escape(Digest.format_number(entry.score)) %> * weight <%= HTML.escape(Digest.format_number(entry.weight)) %></span>
           </div>
         </article>
         <% end %>

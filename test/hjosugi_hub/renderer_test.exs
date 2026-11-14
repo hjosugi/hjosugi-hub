@@ -176,7 +176,9 @@ defmodule HjosugiHub.RendererTest do
       assert radar =~ ~s(href="../feeds.opml")
       assert popular =~ ~s(href="../feeds.opml")
       assert digest =~ ~s(href="../feeds.opml")
-      assert radar =~ ~s(<span>1 feeds</span>)
+      assert radar =~ ~s(<a href="../feeds.opml">1 feeds</a>)
+      assert radar =~ ~s(<span data-total-count>1</span> indexed items)
+      assert popular =~ ~s(<span data-total-count>0</span> github links)
 
       # Every page shares one layout; nav state, extra scripts, and the footer
       # note come from the page's metadata.

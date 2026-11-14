@@ -1,26 +1,16 @@
 <% alias HjosugiHub.HTML %>
 <main class="shell page-shell" data-radar-app data-items-url="<%= @root %>radar-data/items.json" data-items-recent-url="<%= @root %>radar-data/items-recent.json" data-items-archive-url="<%= @root %>radar-data/items-archive.json" data-total-items="<%= @total_items %>" data-category="<%= @category %>">
-  <section class="page-header">
-    <div>
-      <%= if @category == "github" do %>
-      <p class="terminal-line"><span class="prompt">$</span> git ls-remote popular</p>
-      <h1>Popular on GitHub</h1>
-      <p class="page-meta"><span data-total-count><%= length(@items) %></span> github links surfaced on the radar / rebuilt <%= HTML.escape(@generated_text) %></p>
-      <% else %>
-      <p class="terminal-line"><span class="prompt">$</span> hjosugi-hub static search</p>
-      <h1>Technical radar</h1>
-      <p class="page-meta"><span data-total-count><%= length(@items) %></span> indexed items / rebuilt <%= HTML.escape(@generated_text) %> / press <kbd>/</kbd> to search</p>
-      <% end %>
-    </div>
-    <div class="runtime-panel">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>static</span>
-      <span>/</span>
-      <span><%= @enabled_feeds %> feeds</span>
-      <span>/</span>
-      <a href="<%= @root %>feeds.opml">feeds.opml</a>
-    </div>
-  </section>
+  <header class="page-header">
+    <%= if @category == "github" do %>
+    <p class="terminal-line"><span class="prompt">$</span> git ls-remote popular</p>
+    <h1>Popular on GitHub</h1>
+    <p class="note"><span data-total-count><%= @total_items %></span> github links surfaced on the radar / <a href="<%= @root %>feeds.opml"><%= @enabled_feeds %> feeds</a> / rebuilt <%= HTML.escape(@generated_text) %></p>
+    <% else %>
+    <p class="terminal-line"><span class="prompt">$</span> hjosugi-hub static search</p>
+    <h1>Technical radar</h1>
+    <p class="note"><span data-total-count><%= @total_items %></span> indexed items / <a href="<%= @root %>feeds.opml"><%= @enabled_feeds %> feeds</a> / rebuilt <%= HTML.escape(@generated_text) %> / press <kbd>/</kbd> to search</p>
+    <% end %>
+  </header>
 
   <form class="search-form" id="static-search-form" role="search">
     <label for="radar-search">Search title, summary, content, source, and tags</label>
@@ -51,7 +41,7 @@
             <h2>sources</h2>
             <div data-source-facets></div>
           </div>
-          <p class="static-note">Saved items live only in this browser (localStorage). This page is public — anything deployed here is public too.</p>
+          <p class="note">Saved items live only in this browser (localStorage). This page is public — anything deployed here is public too.</p>
         </div>
       </details>
     </aside>

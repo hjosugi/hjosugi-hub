@@ -131,6 +131,19 @@ defmodule HjosugiHub.Util do
     item.published_at || item.collected_at || DateTime.from_unix!(0)
   end
 
+  @doc "Stringifies and trims a value; `nil` becomes an empty string."
+  def trim(nil), do: ""
+  def trim(value), do: value |> to_string() |> String.trim()
+
+  @doc """
+  Joins a site-relative path onto the public base URL.
+
+  Returns an empty string when no base URL is configured, so callers can drop
+  absolute links from exports that do not know where they will be hosted.
+  """
+  def absolute_url("", _path), do: ""
+  def absolute_url(base_url, path), do: base_url <> "/" <> String.trim_leading(path, "/")
+
   defp parse_iso_datetime(""), do: nil
 
   defp parse_iso_datetime(value) do

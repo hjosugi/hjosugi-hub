@@ -1,13 +1,13 @@
 <% alias HjosugiHub.HTML %>
 <main>
   <section class="shell hero">
-    <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span><%= HTML.escape(@site.location) %></div>
     <p class="terminal-line"><span class="prompt">$</span> whoami</p>
     <div class="hero-identity">
       <%= if @avatar_url != "" do %><img class="profile-avatar" src="<%= HTML.escape(@avatar_url) %>" alt="<%= HTML.escape(@site.display_name) %> GitHub avatar" width="56" height="56"><% end %>
       <h1><%= HTML.escape(@site.display_name) %></h1>
     </div>
     <p class="headline"><%= HTML.escape(@site.headline) %></p>
+    <p class="note"><%= HTML.escape(@site.location) %></p>
     <p class="lede"><%= HTML.escape(@site.about) %></p>
     <div class="hero-actions">
       <a class="primary-button" href="#projects">see what i tinker with</a>

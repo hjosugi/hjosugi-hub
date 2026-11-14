@@ -35,7 +35,13 @@ config/feeds.exs
 
 `HjosugiHub.Store`はキャッシュとJSONの境界線です。レガシーキャッシュエントリを安全に読み込み、アイテムを安定したIDでマージし、ソートして公開用JSONを書き出します。
 
-`HjosugiHub.Renderer`はサイト設定と公開アイテムをHTML、JSON、CSP、アセットバージョン、`health.json`、`robots.txt`、`sitemap.xml`に変換します。
+`HjosugiHub.Renderer`はエクスポートの入口です。共通レイアウトの中にページテンプレートをレンダリングし、公開用レーダーJSON、CSP、アセットバージョン、`robots.txt`、`sitemap.xml`と一緒に書き出します。それ以外の出力の中身は、Rendererが呼び出す次の3つのモジュールが作ります。
+
+- `HjosugiHub.Syndication`: Atomフィード、JSON Feed、購読元のOPML一覧
+- `HjosugiHub.Digest`: `/digest/`に表示する、スコア付きアイテムの週次ランキング
+- `HjosugiHub.Health`: エクスポートと直近の収集結果をまとめた`health.json`
+
+`HjosugiHub.PublicItem`は、フィードとダイジェストが共有する表示用のフォールバック(タイトル、要約、タグ)を持ちます。
 
 `HjosugiHub.HTML`、`HjosugiHub.JSON`、`HjosugiHub.Util`、`HjosugiHub.Tagger`は、エスケープ、エンコード、テキストクリーンアップ、安定ID、日付、要約、タグ付けの純粋なヘルパーです。
 
