@@ -34,6 +34,24 @@ defmodule HjosugiHub.Util do
     "trade" => <<0x2122::utf8>>
   }
 
+  # RSS dates follow RFC 822, e.g. "Fri, 13 Nov 2026 12:58:00 -0800". The
+  # weekday, seconds, and zone are optional and the day may be one digit.
+  @rfc822_date ~r/\A(?:[a-z]+,?\s*)?(?<day>\d{1,2})\s+(?<month>[a-z]{3})[a-z]*\.?\s+(?<year>\d{4})\s+(?<hour>\d{1,2}):(?<minute>\d{2})(?::(?<second>\d{2}))?(?:\s*(?<zone>[+-]\d{2}:?\d{2}|[a-z]+))?\s*\z/i
+  @rfc822_offset ~r/\A(?<sign>[+-])(?<hours>\d{2}):?(?<minutes>\d{2})\z/
+  @months ~w(jan feb mar apr may jun jul aug sep oct nov dec)
+  # Offsets in minutes for the zone names RFC 822 defines. Unknown names are
+  # read as UTC, which is what the old parser did for every zone.
+  @rfc822_zones %{
+    "EST" => -300,
+    "EDT" => -240,
+    "CST" => -360,
+    "CDT" => -300,
+    "MST" => -420,
+    "MDT" => -360,
+    "PST" => -480,
+    "PDT" => -420
+  }
+
   def stable_id(source_id, raw_id) do
     :crypto.hash(:sha256, source_id <> <<0>> <> raw_id)
     |> binary_part(0, 16)
@@ -124,7 +142,7 @@ defmodule HjosugiHub.Util do
 
     parse_iso_datetime(value) ||
       parse_iso_date(value) ||
-      parse_http_date(value)
+      parse_rfc822_date(value)
   end
 
   def item_time(item) do
@@ -162,17 +180,38 @@ defmodule HjosugiHub.Util do
     end
   end
 
-  defp parse_http_date(value) do
-    case :httpd_util.convert_request_date(String.to_charlist(value)) do
-      {{year, month, day}, {hour, minute, second}} ->
-        DateTime.new!(Date.new!(year, month, day), Time.new!(hour, minute, second), "Etc/UTC")
-
-      _ ->
-        nil
+  defp parse_rfc822_date(value) do
+    with %{} = parts <- Regex.named_captures(@rfc822_date, value),
+         month when month > 0 <- month_number(parts["month"]),
+         {:ok, date} <- Date.new(int(parts["year"]), month, int(parts["day"])),
+         {:ok, time} <- Time.new(int(parts["hour"]), int(parts["minute"]), int(parts["second"])),
+         {:ok, datetime} <- DateTime.new(date, time, "Etc/UTC") do
+      DateTime.add(datetime, -zone_offset_minutes(parts["zone"]), :minute)
+    else
+      _ -> nil
     end
-  rescue
-    _ -> nil
   end
+
+  defp month_number(name) do
+    case Enum.find_index(@months, &(&1 == String.downcase(name))) do
+      nil -> 0
+      index -> index + 1
+    end
+  end
+
+  defp zone_offset_minutes(zone) do
+    case Regex.named_captures(@rfc822_offset, zone) do
+      %{"sign" => sign, "hours" => hours, "minutes" => minutes} ->
+        total = int(hours) * 60 + int(minutes)
+        if sign == "-", do: -total, else: total
+
+      nil ->
+        Map.get(@rfc822_zones, String.upcase(zone), 0)
+    end
+  end
+
+  defp int(""), do: 0
+  defp int(digits), do: String.to_integer(digits)
 
   defp html_decode(value), do: html_decode(value, @html_decode_passes)
   defp html_decode(value, 0), do: value

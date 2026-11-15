@@ -364,6 +364,20 @@ defmodule HjosugiHub.FeedParserTest do
     assert {:error, ":unsupported_feed"} = FeedParser.parse("<root />", feed)
   end
 
+  test "names an HTML page served in place of a feed" do
+    feed = %{
+      id: "sample",
+      name: "Sample Feed",
+      url: "https://example.com/feed.xml",
+      kind: "rss"
+    }
+
+    page = ~s(\n<!DOCTYPE html><html lang="en"><head><title>404</title></head></html>)
+
+    assert {:error, ":html_page_not_feed"} = FeedParser.parse(page, feed)
+    assert {:error, ":html_page_not_feed"} = FeedParser.parse("<HTML><body></body></HTML>", feed)
+  end
+
   test "returns an error for bad XML" do
     feed = %{
       id: "sample",

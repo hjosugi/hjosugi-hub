@@ -75,12 +75,14 @@
     enabled: true,
     tags: ["netflix", "distributed-systems"]
   },
+  # Uber moved the blog to /us/en/blog/engineering/ and no longer publishes an
+  # RSS feed for it; every old feed path returns 404. Re-enable if one returns.
   %{
     id: "uber-engineering",
     name: "Uber Engineering",
     url: "https://www.uber.com/blog/engineering/rss/",
     kind: "engineering",
-    enabled: true,
+    enabled: false,
     tags: ["uber", "engineering"]
   },
   %{
@@ -110,7 +112,7 @@
   %{
     id: "databricks",
     name: "Databricks Blog",
-    url: "https://www.databricks.com/blog/feed",
+    url: "https://www.databricks.com/feed",
     kind: "official",
     enabled: true,
     tags: ["databricks", "data-engineering", "official"]
@@ -118,7 +120,7 @@
   %{
     id: "snowflake",
     name: "Snowflake Blog",
-    url: "https://www.snowflake.com/en/blog/feed/",
+    url: "https://www.snowflake.com/feed/",
     kind: "official",
     enabled: true,
     tags: ["snowflake", "data-engineering", "official"]

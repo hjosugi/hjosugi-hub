@@ -23,6 +23,10 @@ defmodule HjosugiHub.FeedParser do
   Record.defrecordp(:xmlText, @xml_text_fields)
 
   def parse(body, feed, now \\ DateTime.utc_now()) do
+    # Sites that move their feed often answer the old URL with an HTML page and
+    # status 200; xmerl's error for that is an unreadable tuple.
+    if html_page?(body), do: throw(:html_page_not_feed)
+
     document = parse_xml(body)
     feed_element = first_element([document | descendant_elements(document, "feed")], "feed")
     rss_items = rss_item_elements(document)
@@ -193,6 +197,10 @@ defmodule HjosugiHub.FeedParser do
         resolved -> resolved
       end
     end) || ""
+  end
+
+  defp html_page?(body) do
+    Regex.match?(~r/\A(?:\xEF\xBB\xBF)?\s*<(?:!doctype\s+html|html[\s>])/i, to_string(body))
   end
 
   defp parse_xml(body) do

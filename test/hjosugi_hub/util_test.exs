@@ -45,4 +45,34 @@ defmodule HjosugiHub.UtilTest do
              "https://example.com/search?utm_medium=social&sort=new&q=elixir&fbclid=abc"
            ) == "https://example.com/search?q=elixir&sort=new"
   end
+
+  test "parses RFC 822 dates in UTC" do
+    assert Util.parse_date("Fri, 13 Nov 2026 12:58:00 GMT") == ~U[2026-11-13 12:58:00Z]
+    assert Util.parse_date("Fri, 13 Nov 2026 12:58:00 +0000") == ~U[2026-11-13 12:58:00Z]
+    assert Util.parse_date("Fri, 13 Nov 2026 12:58:00") == ~U[2026-11-13 12:58:00Z]
+  end
+
+  test "applies the zone of RFC 822 dates" do
+    assert Util.parse_date("Fri, 13 Nov 2026 12:58:00 -0800") == ~U[2026-11-13 20:58:00Z]
+    assert Util.parse_date("Sat, 14 Nov 2026 10:08:27 -06:00") == ~U[2026-11-14 16:08:27Z]
+    assert Util.parse_date("Sun, 15 Nov 2026 09:30:00 +0930") == ~U[2026-11-15 00:00:00Z]
+    assert Util.parse_date("Fri, 13 Nov 2026 12:58:00 PST") == ~U[2026-11-13 20:58:00Z]
+    assert Util.parse_date("Fri, 13 Nov 2026 23:00:00 EDT") == ~U[2026-11-14 03:00:00Z]
+  end
+
+  test "accepts the optional parts of RFC 822 dates" do
+    assert Util.parse_date("Wed, 4 Nov 2026 10:08:27 +0000") == ~U[2026-11-04 10:08:27Z]
+    assert Util.parse_date("4 Nov 2026 10:08:27 +0000") == ~U[2026-11-04 10:08:27Z]
+    assert Util.parse_date("Wed, 04 Nov 2026 10:08 +0000") == ~U[2026-11-04 10:08:00Z]
+    assert Util.parse_date("Wednesday, 4 November 2026 10:08:27 GMT") == ~U[2026-11-04 10:08:27Z]
+  end
+
+  test "still parses ISO dates and rejects nonsense" do
+    assert Util.parse_date("2026-11-13T12:58:00-08:00") == ~U[2026-11-13 20:58:00Z]
+    assert Util.parse_date("2026-11-13") == ~U[2026-11-13 00:00:00Z]
+    assert Util.parse_date("Fri, 31 Feb 2026 12:58:00 GMT") == nil
+    assert Util.parse_date("Fri, 13 Foo 2026 12:58:00 GMT") == nil
+    assert Util.parse_date("yesterday") == nil
+    assert Util.parse_date(nil) == nil
+  end
 end
