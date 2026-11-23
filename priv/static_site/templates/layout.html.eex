@@ -20,7 +20,7 @@
 <body class="crt">
 <header class="site-header">
   <div class="shell nav-shell">
-    <a class="brand" href="<%= if @root == "", do: "./", else: @root %>" aria-label="Home"><span class="prompt">~/</span><span class="brand-handle"><%= HTML.escape(@site.handle) %></span></a>
+    <a class="brand" href="<%= if @root == "", do: "./", else: @root %>"><span class="prompt">~/</span><span class="brand-handle"><%= HTML.escape(@site.handle) %></span></a>
     <nav aria-label="Primary navigation"><%= for {id, path} <- nav_pages() do %>
       <a class="nav-link<%= if @page.id == id, do: " active" %>" href="<%= @root %><%= path %>"><%= path %></a><% end %>
       <%= for link <- @site.links do %><a class="nav-link" href="<%= HTML.escape(link.url) %>" rel="me noopener" target="_blank"><%= HTML.escape(String.downcase(link.label)) %></a><% end %>
